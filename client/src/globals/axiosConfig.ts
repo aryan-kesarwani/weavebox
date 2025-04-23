@@ -8,7 +8,7 @@ interface ErrorResponse {
 
 // Base configuration
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3000/api/v1/arweave', // Your backend API URL
+  baseURL: 'http://localhost:3000/weavebox/api/v1', // Your backend API URL
   timeout: 10000, // Request timeout in milliseconds
   headers: {
     'Content-Type': 'application/json',

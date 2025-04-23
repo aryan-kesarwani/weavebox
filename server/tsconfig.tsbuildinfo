@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/apis/arweaveconfig.api.ts","./src/controllers/authcontroller.ts","./src/controllers/filecontroller.ts","./src/controllers/imagecontroller.ts","./src/controllers/videocontroller.ts","./src/routes/authroutes.ts","./src/routes/filerouter.ts","./src/routes/imagerouter.ts","./src/routes/index.ts","./src/routes/videorouter.ts"],"version":"5.8.3"}

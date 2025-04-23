@@ -1,11 +1,72 @@
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiMenu, FiX, FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import API from '../globals/axiosConfig';
+
+// Declare the google namespace for TypeScript
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string;
+            scope: string;
+            callback: (response: { access_token: string }) => void;
+          }) => {
+            requestAccessToken: () => void;
+          };
+        };
+      };
+    };
+  }
+}
+
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Load Google OAuth2 script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const handleGoogleLogin = () => {
+    // Initialize Google OAuth2 client
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive',
+      callback: async (response: { access_token: string }) => {
+        console.log('Token', response.access_token);
+        if (response.access_token) {
+          try {
+            // Send the access token to your backend
+            const result = await API.post('/auth/verify', {
+              access_token: response.access_token
+            });
+            console.log('Login successful:', result);
+            // Store the token in localStorage or state management
+            localStorage.setItem('googleAccessToken', response.access_token);
+          } catch (error) {
+            console.error('Error during login:', error);
+          }
+        }
+      },
+    });
+
+    // Request access token
+    client.requestAccessToken();
+  };
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
@@ -81,6 +142,7 @@ const Dashboard = () => {
             Connect Your Google Drive
           </h1>
           <motion.button
+          onClick={handleGoogleLogin}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center space-x-3 px-8 py-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold shadow-lg"

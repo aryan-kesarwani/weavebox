@@ -1,11 +1,12 @@
 import { Router } from "express";
-import createProfile from "../controllers/profileCreation.controller"
+import { fileController } from "../controllers/fileController";
 
 
 // Create a new router
-export const userRounter = Router()
+export const fileRouter = Router()
 
 // Define routes
-userRounter.post('/profile', createProfile);
+fileRouter.post('/getFile', fileController);
+fileRouter.post('/uploadFile', fileController);
 
 

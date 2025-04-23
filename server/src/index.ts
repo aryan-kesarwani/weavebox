@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
-import mainRouter from "./routes";
+import { mainRouter } from "./routes";
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,9 +10,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 
 app.use(express.json());
-app.use("/api/v1/arweave", mainRouter);
+app.use("/weavebox/api/v1", mainRouter);
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`API available at http://localhost:${PORT}/api/v1/arweave`);
+    console.log(`API available at http://localhost:${PORT}/weavebox/api/v1`);
 });
