@@ -5,6 +5,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import API from '../globals/axiosConfig';
 import { useArweaveWallet, useDarkMode } from '../utils/util';
 import accessDriveFiles from '../googleAuths/accessDriveFiles';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Declare the google namespace for TypeScript
 declare global {
