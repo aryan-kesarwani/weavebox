@@ -1,9 +1,9 @@
-import { useState,useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiMenu, FiX, FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus, FiUser } from 'react-icons/fi';
+import { FiMenu, FiX, FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus, FiUser, FiArrowRight, FiFile, FiMusic } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../globals/axiosConfig';
-import { useArweaveWallet } from '../utils/util';
+import { useArweaveWallet, useDarkMode } from '../utils/util';
 
 // Declare the google namespace for TypeScript
 declare global {
@@ -24,13 +24,77 @@ declare global {
   }
 }
 
-
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [selectedFileDetails, setSelectedFileDetails] = useState<number | null>(null);
+
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
+  const { darkMode, toggleDarkMode } = useDarkMode();
+
+  const [recentFiles, setRecentFiles] = useState([
+    { 
+      id: 1, 
+      name: 'vacation.jpg', 
+      type: 'image', 
+      url: 'https://source.unsplash.com/random/300x300?vacation', 
+      date: '2025-04-20', 
+      time: '14:35:22',
+      size: '2.3 MB',
+      txHash: 'Dx7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui8',
+      contentType: 'image/jpeg',
+      permanentlyStored: true,
+      uploadedBy: userAddress || 'Unknown'
+    },
+    { 
+      id: 4, 
+      name: 'beach.jpg', 
+      type: 'image', 
+      url: 'https://source.unsplash.com/random/300x300?beach', 
+      date: '2025-04-10', 
+      time: '10:15:45',
+      size: '3.2 MB',
+      txHash: 'Ax7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui9',
+      contentType: 'image/jpeg',
+      permanentlyStored: true,
+      uploadedBy: userAddress || 'Unknown'
+    },
+    { 
+      id: 6, 
+      name: 'tutorial.mp4', 
+      type: 'video', 
+      url: '', 
+      date: '2025-04-01', 
+      time: '08:25:30',
+      size: '15.2 MB',
+      txHash: 'Bx7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui7',
+      contentType: 'video/mp4',
+      permanentlyStored: true,
+      uploadedBy: userAddress || 'Unknown'
+    },
+    { 
+      id: 2, 
+      name: 'document.pdf', 
+      type: 'document', 
+      url: '', 
+      date: '2025-04-18', 
+      time: '12:45:00',
+      size: '1.1 MB',
+      txHash: 'Cx7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui6',
+      contentType: 'application/pdf',
+      permanentlyStored: true,
+      uploadedBy: userAddress || 'Unknown'
+    },
+  ]);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     // Load Google OAuth2 script
@@ -78,16 +142,29 @@ const Dashboard = () => {
     navigate('/');
   };
 
+  const getFileIcon = (type) => {
+    switch(type) {
+      case 'image':
+        return <FiImage size={24} className="text-blue-500" />;
+      case 'video':
+        return <FiVideo size={24} className="text-purple-500" />;
+      case 'audio':
+        return <FiMusic size={24} className="text-pink-500" />;
+      default:
+        return <FiFile size={24} className="text-gray-500" />;
+    }
+  };
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       {/* Navbar */}
-      <nav className="fixed w-full bg-white/80 dark:bg-black/40 backdrop-blur-md shadow-md z-50">
+      <nav className="fixed w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md z-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 {isSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
               </button>
@@ -97,17 +174,26 @@ const Dashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                onClick={toggleDarkMode}
+                className="p-3 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Toggle theme"
               >
-                {darkMode ? '☀️' : '🌙'}
+                {darkMode ? (
+                  <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
               </button>
               
               {/* Profile Button */}
               <div className="relative">
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="flex items-center space-x-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <FiUser size={20} />
                   <span className="hidden md:inline">{userAddress?.slice(0, 6)}...</span>
@@ -138,32 +224,26 @@ const Dashboard = () => {
       <motion.div
         initial={false}
         animate={{ width: isSidebarOpen ? '250px' : '0px' }}
-        className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-40 overflow-hidden`}
+        className="fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-40 overflow-hidden"
       >
         <div className="p-4 space-y-4">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            onClick={() => navigate('/dashboard')}
+            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 bg-gray-100 dark:bg-gray-700"
           >
             <FiUpload size={20} />
-            <span>File Upload</span>
+            <span>Upload</span>
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            onClick={() => navigate('/uploads')}
+            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
           >
-            <FiImage size={20} />
-            <span>Image Upload</span>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <FiVideo size={20} />
-            <span>Video Upload</span>
+            <FiFolder size={20} />
+            <span>View Uploads</span>
           </motion.button>
         </div>
       </motion.div>
@@ -183,10 +263,10 @@ const Dashboard = () => {
               className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FiUpload size={32} className="text-blue-600 dark:text-blue-400" />
                 </div>
-                <h2 className="text-2xl font-semibold mb-4">Upload from Device</h2>
+                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Upload from Device</h2>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
                   Upload files directly from your computer or mobile device to Arweave's permanent storage.
                 </p>
@@ -209,10 +289,10 @@ const Dashboard = () => {
               className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
             >
               <div className="text-center">
-                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <FiFolderPlus size={32} className="text-purple-600 dark:text-purple-400" />
                 </div>
-                <h2 className="text-2xl font-semibold mb-4">Import from Google Drive</h2>
+                <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Import from Google Drive</h2>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
                   Connect your Google Drive account to import and permanently store your files on Arweave.
                 </p>
@@ -226,6 +306,141 @@ const Dashboard = () => {
                 </motion.button>
               </div>
             </motion.div>
+          </div>
+
+          {/* Recent Files Section */}
+          <div className="mt-20 max-w-6xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Recent Files</h2>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/uploads')}
+                className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 font-medium"
+              >
+                <span>View All</span>
+                <FiArrowRight size={16} />
+              </motion.button>
+            </div>
+            
+            {recentFiles.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {recentFiles.map((file) => (
+                  <motion.div
+                    key={file.id}
+                    whileHover={{ scale: 1.03 }}
+                    className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative"
+                  >
+                    {/* Three dots menu */}
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedFileDetails(selectedFileDetails === file.id ? null : file.id);
+                      }}
+                      className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                      </svg>
+                    </button>
+                    
+                    {/* File Preview */}
+                    <div className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      {file.type === 'image' ? (
+                        <img 
+                          src={file.url} 
+                          alt={file.name} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center">
+                          {getFileIcon(file.type)}
+                          <span className="text-xs mt-2 uppercase text-gray-500 dark:text-gray-400">
+                            {file.name.split('.').pop()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* File Info */}
+                    <div className="p-3">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={file.name}>
+                        {file.name}
+                      </p>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {file.size}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {file.date}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* File Details Popup */}
+                    {selectedFileDetails === file.id && (
+                      <div className="absolute inset-0 bg-white dark:bg-gray-800 z-20 p-4 overflow-y-auto">
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">File Details</h3>
+                          <button 
+                            onClick={() => setSelectedFileDetails(null)}
+                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          >
+                            <FiX size={20} />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-3 text-sm">
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Name</p>
+                            <p className="font-medium text-gray-900 dark:text-white break-all">{file.name}</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Uploaded On</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{file.date} at {file.time}</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Size</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{file.size}</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Type</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{file.contentType}</p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Transaction Hash</p>
+                            <p className="font-medium text-blue-600 dark:text-blue-400 break-all">
+                              {file.txHash}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Storage Status</p>
+                            <p className="font-medium text-green-600 dark:text-green-400">
+                              {file.permanentlyStored ? 'Permanently Stored' : 'Processing'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <FiFolder size={48} className="text-gray-400 dark:text-gray-600 mb-4" />
+                  <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">No recent files</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mt-2">
+                    Upload some files to see them here
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
