@@ -4,6 +4,8 @@ import { createTransaction } from '../utils/wallet';
 import { useSelector, useDispatch } from 'react-redux';
 import { JWKInterface } from 'arweave/node/lib/wallet';
 import { setUserAddress } from '../redux/slices/arConnectionSlice';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Fix the RootType import issue
 interface StateType {
@@ -78,7 +80,6 @@ const ContentUploadForm = () => {
   
   // Form submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState('');
   const [submitError, setSubmitError] = useState('');
 
   // Content upload state
@@ -111,7 +112,7 @@ const ContentUploadForm = () => {
       };
       
       // Store wallet details in localStorage for persistence
-      localStorage.setItem('curioWeaveContentUploadSession', JSON.stringify(walletDetails));
+      localStorage.setItem('weaveboxContentUploadSession', JSON.stringify(walletDetails));
       console.log('Saved wallet details for content upload session at:', timestamp);
     }
   }, [userAddress, keySelector, contentType]);
@@ -229,7 +230,6 @@ const ContentUploadForm = () => {
     
     setIsSubmitting(true);
     setSubmitError('');
-    setSubmitMessage('Uploading your content...');
     
     try {
       // Check if wallet is connected
@@ -267,7 +267,14 @@ const ContentUploadForm = () => {
         
         if(txn) {
           console.log("Transaction successful:", txn);
-          setSubmitMessage('Content uploaded successfully!');
+          toast.success('Content uploaded successfully!', {
+            position: "bottom-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
           
           // Clear saved form data after successful submission
           localStorage.removeItem('contentUploadForm');
@@ -283,7 +290,6 @@ const ContentUploadForm = () => {
             setFile(null);
             setFilePreview(null);
             setIsSubmitting(false);
-            setSubmitMessage('');
           }, 3000);
         } else {
           throw new Error("Transaction failed");
@@ -306,12 +312,6 @@ const ContentUploadForm = () => {
       <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
         Upload New Content
       </h2>
-      
-      {submitMessage && (
-        <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg">
-          {submitMessage}
-        </div>
-      )}
       
       {submitError && (
         <div className="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg">

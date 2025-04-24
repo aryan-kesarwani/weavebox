@@ -1,8 +1,9 @@
 import { useState,useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiMenu, FiX, FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+import { FiMenu, FiX, FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus, FiUser } from 'react-icons/fi';
+import { Link, useNavigate } from 'react-router-dom';
 import API from '../globals/axiosConfig';
+import { useArweaveWallet } from '../utils/util';
 
 // Declare the google namespace for TypeScript
 declare global {
@@ -27,6 +28,9 @@ declare global {
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const navigate = useNavigate();
+  const { userAddress, handleDisconnect } = useArweaveWallet();
 
   useEffect(() => {
     // Load Google OAuth2 script
@@ -59,6 +63,7 @@ const Dashboard = () => {
             localStorage.setItem('googleAccessToken', response.access_token);
           } catch (error) {
             console.error('Error during login:', error);
+            alert('Failed to connect to Google Drive. Please try again.');
           }
         }
       },
@@ -66,6 +71,11 @@ const Dashboard = () => {
 
     // Request access token
     client.requestAccessToken();
+  };
+
+  const handleDisconnectWallet = () => {
+    handleDisconnect();
+    navigate('/');
   };
 
   return (
@@ -82,7 +92,7 @@ const Dashboard = () => {
                 {isSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
               </button>
               <Link to="/" className="ml-4 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                Web3 Drive
+                WeaveBox
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -92,6 +102,33 @@ const Dashboard = () => {
               >
                 {darkMode ? '☀️' : '🌙'}
               </button>
+              
+              {/* Profile Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <FiUser size={20} />
+                  <span className="hidden md:inline">{userAddress?.slice(0, 6)}...</span>
+                </button>
+                
+                {/* Profile Dropdown */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2">
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Wallet Address</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 break-all">{userAddress}</p>
+                    </div>
+                    <button
+                      onClick={handleDisconnectWallet}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Disconnect Wallet
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -132,25 +169,65 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Main Content */}
-      <div className="pt-16 min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center"
-        >
-          <h1 className="text-4xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-            Connect Your Google Drive
+      <div className="pt-16 min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+            Upload Your Files
           </h1>
-          <motion.button
-          onClick={handleGoogleLogin}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center space-x-3 px-8 py-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold shadow-lg"
-          >
-            <FiFolderPlus size={24} />
-            <span>Connect with Google Drive</span>
-          </motion.button>
-        </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Local Upload Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FiUpload size={32} className="text-blue-600 dark:text-blue-400" />
+                </div>
+                <h2 className="text-2xl font-semibold mb-4">Upload from Device</h2>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Upload files directly from your computer or mobile device to Arweave's permanent storage.
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/upload')}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg"
+                >
+                  Upload Files
+                </motion.button>
+              </div>
+            </motion.div>
+
+            {/* Google Drive Upload Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FiFolderPlus size={32} className="text-purple-600 dark:text-purple-400" />
+                </div>
+                <h2 className="text-2xl font-semibold mb-4">Import from Google Drive</h2>
+                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  Connect your Google Drive account to import and permanently store your files on Arweave.
+                </p>
+                <motion.button
+                  onClick={handleGoogleLogin}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg"
+                >
+                  Connect Google Drive
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   );
