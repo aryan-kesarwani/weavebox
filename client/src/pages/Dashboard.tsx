@@ -119,10 +119,17 @@ const Dashboard = ({ onFolderClick }: Props) => {
         console.log('Token', response.access_token);
         if (response.access_token) {
           try {
-            // Send the access token to your backend
-            const result : GoogleDriveFile[] = await accessDriveFiles(response.access_token);
-            setFiles(result)
-            console.log(result);
+            // Store the token in localStorage for GoogleDrive page to use
+            localStorage.setItem('google_access_token', response.access_token);
+            
+            // Store the time when token was obtained
+            localStorage.setItem('google_token_timestamp', Date.now().toString());
+            
+            // Set Google user as logged in
+            localStorage.setItem('google_connected', 'true');
+            
+            // Redirect to Google Drive page
+            navigate('/google-drive');
           } catch (error) {
             console.error('Error during login:', error);
             alert('Failed to connect to Google Drive. Please try again.');
@@ -155,51 +162,6 @@ const Dashboard = ({ onFolderClick }: Props) => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
-      <div>
-      <h2>My Google Drive Files</h2>
-      <ul>
-    {files.map(file => {
-      if (file.mimeType === 'application/vnd.google-apps.folder') {
-        // Folder: either link to Google Drive or handle in-app navigation
-        return (
-          <li key={file.id}>
-            {onFolderClick ? (
-              <button onClick={() => onFolderClick(file.id)}>📁 {file.name}</button>
-            ) : (
-              <a
-                href={`https://drive.google.com/drive/folders/${file.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                📁 {file.name}
-              </a>
-            )}
-          </li>
-        );
-      }
-      // File: link to open in Google Drive
-      return (
-        <li key={file.id}>
-          <a
-            href={`https://drive.google.com/file/d/${file.id}/view`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {file.mimeType.startsWith('image/') && (
-              <img
-                src={`https://drive.google.com/uc?id=${file.id}`}
-                alt={file.name}
-                width={50}
-                style={{ marginRight: 8 }}
-              />
-            )}
-            📄 {file.name}
-          </a>
-        </li>
-      );
-    })}
-  </ul>
-    </div>
       {/* Navbar */}
       <nav className="fixed w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md z-50">
         <div className="max-w-7xl mx-auto px-4">
