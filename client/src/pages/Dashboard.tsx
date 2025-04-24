@@ -4,8 +4,7 @@ import { FiMenu, FiX, FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus, FiUser
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../globals/axiosConfig';
 import { useArweaveWallet, useDarkMode } from '../utils/util';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import accessDriveFiles from '../googleAuths/accessDriveFiles';
 
 // Declare the google namespace for TypeScript
 declare global {
@@ -140,12 +139,8 @@ const Dashboard = () => {
         if (response.access_token) {
           try {
             // Send the access token to your backend
-            const result = await API.post('/auth/verify', {
-              access_token: response.access_token
-            });
-            console.log('Login successful:', result);
-            // Store the token in localStorage or state management
-            localStorage.setItem('googleAccessToken', response.access_token);
+            const result = await accessDriveFiles(response.access_token);
+            console.log(result);
           } catch (error) {
             console.error('Error during login:', error);
             alert('Failed to connect to Google Drive. Please try again.');
