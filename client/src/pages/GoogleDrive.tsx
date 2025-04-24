@@ -6,10 +6,12 @@ import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
 import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Sidebar from '../components/Sidebar'; // Import the Sidebar component
-import Navbar from '../components/Navbar'; // Import the Navbar component
-import { imageCacheDB } from '../utils/imageCacheDB'; // Import the cache utility
+import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar';
+import { imageCacheDB } from '../utils/imageCacheDB';
 import { storeFile } from '../utils/fileStorage';
+import { db } from '../utils/db';
+import { uploadArweave } from '../utils/turbo';
 import UploadConfirmationModal from '../components/UploadConfirmationModal';
 import UploadProgressBar from '../components/UploadProgressBar';
 
@@ -691,8 +693,11 @@ const GoogleDrive = () => {
           lastModified: file.modifiedTime ? new Date(file.modifiedTime).getTime() : Date.now() 
         });
         
-        // Store file in IndexedDB and trigger Arweave upload
-        await storeFile(fileObject, userAddress || 'anonymous');
+        // Store file in IndexedDB with 'pending' status
+        const storedFile = await storeFile(fileObject, userAddress || 'anonymous');
+        
+        // Update the file status to 'uploading'
+        await db.files.update(storedFile.id!, { status: 'uploading' });
         
         // Almost done
         setUploadProgress(90);
@@ -710,23 +715,46 @@ const GoogleDrive = () => {
         
         // Small delay to show 100% before moving to next file
         await new Promise(resolve => setTimeout(resolve, 300));
+        
       } catch (error) {
-        console.error('Error uploading file to Arweave:', error);
+        console.error(`Failed to process ${file.name}:`, error);
         failCount++;
         
-        // Remove from uploading set
+        // Remove from uploading set even if failed
         const newUploadingFiles = new Set(uploadingFiles);
         newUploadingFiles.delete(fileId);
         setUploadingFiles(newUploadingFiles);
       }
     }
     
-    // Show completion state
+    // All files processed
     setUploadComplete(true);
     
-    // Clear selection after upload
-    setSelectionMode(false);
+    // Show completion message
+    toast.success(`Successfully stored ${successCount} file${successCount !== 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} failed)` : ''}`, {
+      position: "bottom-right",
+      autoClose: 5000,
+    });
+    
+    // Clear selection after successful storage
     setSelectedFiles(new Set());
+    setSelectionMode(false);
+
+    // Start Arweave upload process
+    try {
+      await window.arweaveWallet.connect(['ACCESS_PUBLIC_KEY', 'SIGN_TRANSACTION', 'SIGNATURE']);
+      await uploadArweave();
+      toast.success('Files uploaded to Arweave successfully!', {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+    } catch (error) {
+      console.error('Failed to upload files to Arweave:', error);
+      toast.error('Failed to upload files to Arweave', {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+    }
   };
 
   const handleCloseProgress = () => {
