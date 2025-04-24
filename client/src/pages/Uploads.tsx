@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { FiMenu, FiX, FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiFolderPlus } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiMenu, FiX, FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiFolderPlus, FiDownload, FiExternalLink, FiCopy } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { useArweaveWallet, useDarkMode } from '../utils/util';
 import { useDropzone } from 'react-dropzone';
@@ -23,6 +23,7 @@ const Uploads = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFileDetails, setSelectedFileDetails] = useState<number | null>(null);
   const [fileDetailModal, setFileDetailModal] = useState<number | null>(null);
+  const [previewModal, setPreviewModal] = useState<number | null>(null);
 
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
@@ -242,8 +243,8 @@ const Uploads = () => {
   }, [showUploadPopup]);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (selectedFileDetails !== null && !e.target.closest('.file-menu-button') && !e.target.closest('.file-menu-dropdown')) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (selectedFileDetails !== null && e.target instanceof HTMLElement && !e.target.closest('.file-menu-button') && !e.target.closest('.file-menu-dropdown')) {
         setSelectedFileDetails(null);
       }
     };
@@ -737,82 +738,15 @@ const Uploads = () => {
                     className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white file-menu-button"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s-.9 2-2 2 2-.9 2-2-.9-2-2-2z" />
+                      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                     </svg>
                   </button>
 
-                  {/* File Details Popup Menu */}
-                  {selectedFileDetails === file.id && (
-                    <div className="absolute top-2 right-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700 file-menu-dropdown">
-                      <div className="py-1">
-                        <button 
-                          onClick={() => {
-                            setSelectedFileDetails(null);
-                            setFileDetailModal(file.id);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          View Details
-                        </button>
-                        
-                        <button 
-                          onClick={() => {
-                            toast.info(`Downloading ${file.name}`);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                          Download
-                        </button>
-                        
-                        <button 
-                          onClick={() => {
-                            toast.info(`Opening ${file.name}`);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          View File
-                        </button>
-                        
-                        <button 
-                          onClick={() => {
-                            // Copy transaction URL to clipboard
-                            navigator.clipboard.writeText(`https://arweave.net/${file.txHash}`);
-                            toast.success("URL copied to clipboard");
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                          Copy URL
-                        </button>
-                        
-                        <button 
-                          onClick={() => {
-                            toast.info(`Showing transaction for ${file.name}`);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                          </svg>
-                          View Transaction
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                  {/* File card onClick handler - opens preview */}
+                  <div 
+                    className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+                    onClick={() => setPreviewModal(file.id)}
+                  >
                     {file.type === 'image' ? (
                       <img 
                         src={file.url} 
@@ -828,6 +762,8 @@ const Uploads = () => {
                       </div>
                     )}
                   </div>
+                  
+                  {/* File Info section */}
                   <div className="p-3">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={file.name}>
                       {file.name}
@@ -841,6 +777,94 @@ const Uploads = () => {
                       </span>
                     </div>
                   </div>
+
+                  {/* File Details Dropdown Menu */}
+                  {selectedFileDetails === file.id && (
+                    <div className="absolute top-2 right-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700 file-menu-dropdown">
+                      <div className="py-1">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFileDetails(null);
+                            setFileDetailModal(file.id);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          View Details
+                        </button>
+                        
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Logic for downloading - no toast
+                            const link = document.createElement('a');
+                            link.href = file.url || `https://arweave.net/${file.txHash}`;
+                            link.download = file.name;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            setSelectedFileDetails(null);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        >
+                          <FiDownload className="w-4 h-4 mr-2" />
+                          Download
+                        </button>
+                        
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFileDetails(null);
+                            setPreviewModal(file.id);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        >
+                          <FiExternalLink className="w-4 h-4 mr-2" />
+                          View File
+                        </button>
+                        
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Copy transaction URL to clipboard
+                            navigator.clipboard.writeText(`https://arweave.net/${file.txHash}`);
+                            // Show short-lived toast for clipboard copy
+                            toast.info("Copied to clipboard", {
+                              position: "bottom-right",
+                              autoClose: 3000,
+                              hideProgressBar: true,
+                              closeOnClick: true,
+                              pauseOnHover: true,
+                              draggable: true,
+                            });
+                            setSelectedFileDetails(null);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        >
+                          <FiCopy className="w-4 h-4 mr-2" />
+                          Copy URL
+                        </button>
+                        
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Open Arweave explorer in a new tab
+                            window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank');
+                            setSelectedFileDetails(null);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                        >
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          View Transaction
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -942,26 +966,52 @@ const Uploads = () => {
                   <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Actions</p>
                     <div className="flex flex-wrap gap-2">
-                      <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
+                      <button 
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = file.url || `https://arweave.net/${file.txHash}`;
+                          link.download = file.name;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center"
+                      >
+                        <FiDownload className="w-4 h-4 mr-2" />
                         Download
                       </button>
-                      <button className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex items-center">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
+                      <button 
+                        onClick={() => {
+                          setFileDetailModal(null);
+                          setPreviewModal(file.id);
+                        }}
+                        className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex items-center"
+                      >
+                        <FiExternalLink className="w-4 h-4 mr-2" />
                         View File
                       </button>
-                      <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center">
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://arweave.net/${file.txHash}`);
+                          // Show short-lived toast for clipboard copy
+                          toast.info("Copied to clipboard", {
+                            position: "bottom-right",
+                            autoClose: 3000,
+                            hideProgressBar: true,
+                            closeOnClick: true,
+                            pauseOnHover: true,
+                            draggable: true,
+                          });
+                        }}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
+                      >
+                        <FiCopy className="w-4 h-4 mr-2" />
                         Copy URL
                       </button>
-                      <button className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center">
+                      <button 
+                        onClick={() => window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank')}
+                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
+                      >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
@@ -975,6 +1025,121 @@ const Uploads = () => {
           </div>
         </div>
       )}
+      
+      {/* Add File Preview Modal - Google Drive Style */}
+      <AnimatePresence>
+        {previewModal !== null && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+            onClick={() => setPreviewModal(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl w-4/5 h-4/5 max-w-5xl relative overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header with file name and close button */}
+              <div className="absolute top-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 flex items-center justify-between shadow-md z-10">
+                {uploadedFiles.map(file => file.id === previewModal && (
+                  <h3 key={file.id} className="font-medium text-gray-900 dark:text-white truncate">
+                    {file.name}
+                  </h3>
+                ))}
+                <div className="flex items-center space-x-2">
+                  {uploadedFiles.map(file => file.id === previewModal && (
+                    <button 
+                      key={`download-${file.id}`}
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = file.url || `https://arweave.net/${file.txHash}`;
+                        link.download = file.name;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                      title="Download"
+                    >
+                      <FiDownload className="text-gray-600 dark:text-gray-300" size={20} />
+                    </button>
+                  ))}
+                  <button 
+                    onClick={() => setPreviewModal(null)}
+                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    title="Close"
+                  >
+                    <FiX className="text-gray-600 dark:text-gray-300" size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* File Preview Content */}
+              <div className="absolute inset-0 pt-16 pb-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                {uploadedFiles.map(file => {
+                  if (file.id !== previewModal) return null;
+                  
+                  // Image Preview
+                  if (file.type === 'image' && file.url) {
+                    return (
+                      <div key={file.id} className="h-full w-full flex items-center justify-center p-4">
+                        <img 
+                          src={file.url} 
+                          alt={file.name} 
+                          className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                        />
+                      </div>
+                    );
+                  }
+                  
+                  // Non-image files - just show icon and name
+                  return (
+                    <div key={file.id} className="text-center">
+                      <div className="mb-4 p-6 bg-white dark:bg-gray-700 rounded-full inline-flex">
+                        {file.type === 'video' ? (
+                          <FiVideo size={64} className="text-purple-500" />
+                        ) : file.type === 'audio' ? (
+                          <FiMusic size={64} className="text-pink-500" />
+                        ) : file.type === 'document' ? (
+                          <FiFile size={64} className="text-blue-500" />
+                        ) : file.type === 'archive' ? (
+                          <FiFolder size={64} className="text-green-500" />
+                        ) : (
+                          <FiFile size={64} className="text-gray-500" />
+                        )}
+                      </div>
+                      <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+                        {file.name}
+                      </h3>
+                      <p className="text-gray-500 dark:text-gray-400">
+                        {file.contentType || file.type} • {file.size}
+                      </p>
+                      <button 
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = file.url || `https://arweave.net/${file.txHash}`;
+                          link.download = file.name;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center mx-auto"
+                      >
+                        <FiDownload className="mr-2" />
+                        Download
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
