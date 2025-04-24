@@ -6,6 +6,7 @@ import { useArweaveWallet, useDarkMode } from '../utils/util';
 import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { storeFile } from '../utils/fileStorage';
 
 const Upload = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -59,28 +60,52 @@ const Upload = () => {
     setIsUploading(true);
     setUploadProgress(0);
     
-    // Simulate upload progress (replace with actual Arweave upload)
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          toast.success('File uploaded successfully!', {
-            position: "bottom-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-          // Clear the selected file after successful upload
-          setSelectedFile(null);
-          setPriceEstimate(null);
-          return 100;
-        }
-        return prev + 10;
+    try {
+      // Simulate progress
+      const simulateProgress = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(simulateProgress);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
+      
+      // Store the file in IndexedDB
+      await storeFile(selectedFile, userAddress || '');
+      
+      // Complete the upload
+      clearInterval(simulateProgress);
+      setUploadProgress(100);
+      setIsUploading(false);
+      
+      toast.success('File uploaded successfully!', {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
-    }, 500);
+      
+      // Clear the selected file after successful upload
+      setSelectedFile(null);
+      setPriceEstimate(null);
+      
+      // Redirect to uploads page after a short delay
+      setTimeout(() => {
+        navigate('/uploads');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload file. Please try again.', {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      setIsUploading(false);
+    }
   };
 
   // Add cleanup when navigating away
