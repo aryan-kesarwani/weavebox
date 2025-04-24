@@ -23,7 +23,7 @@ export const useArweaveWallet = () => {
     await window.arweaveWallet.connect(
       ['ACCESS_ADDRESS', 'SIGN_TRANSACTION'],
       {
-        name: 'CurioWeave',
+        name: 'WeaveBox',
         logo: 'https://arweave.net/logo.png'
       },
       { host: 'localhost', port: 1948, protocol: 'http' }
@@ -31,7 +31,7 @@ export const useArweaveWallet = () => {
 
     dispatch(setIsConnected(true));
     await getActiveAddress();
-    navigate('/profile');
+    navigate('/dashboard');
   };
 
   const handleDisconnect = async () => {
