@@ -142,7 +142,7 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  const getFileIcon = (type) => {
+  const getFileIcon = (type: string) => {
     switch(type) {
       case 'image':
         return <FiImage size={24} className="text-blue-500" />;
