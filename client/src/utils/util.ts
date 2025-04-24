@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setIsConnected, setUserAddress, setUserInterests } from "../redux/slices/arConnectionSlice";
 import { useNavigate } from "react-router-dom";
 import { setDarkMode } from "../redux/slices/darkModeSlice";
+import { useState } from "react";
 
 // Define RootState type that matches our redux structure
 interface RootState {
@@ -12,6 +13,39 @@ interface RootState {
   };
   darkModeState: boolean;
 }
+
+// Google user type
+export interface GoogleUserInfo {
+  name: string;
+  email: string;
+  picture: string;
+  id: string;
+  accessToken: string;
+}
+
+// Hook for Google user info
+export const useGoogleUser = () => {
+  const [googleUser, setGoogleUser] = useState<GoogleUserInfo | null>(() => {
+    const savedUser = localStorage.getItem('google_user_info');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const setGoogleUserInfo = (userInfo: GoogleUserInfo | null) => {
+    setGoogleUser(userInfo);
+    if (userInfo) {
+      localStorage.setItem('google_user_info', JSON.stringify(userInfo));
+    } else {
+      localStorage.removeItem('google_user_info');
+    }
+  };
+
+  const disconnectGoogle = () => {
+    setGoogleUserInfo(null);
+    localStorage.removeItem('googleAccessToken');
+  };
+
+  return { googleUser, setGoogleUserInfo, disconnectGoogle };
+};
 
 // Move hooks into custom hook
 export const useArweaveWallet = () => {
@@ -74,7 +108,6 @@ export const useArweaveWallet = () => {
     updateUserInterests
   };
 };
-
 
 export const useDarkMode = () => {
     const dispatch = useDispatch();
