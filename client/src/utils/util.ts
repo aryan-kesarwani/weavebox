@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setIsConnected, setUserAddress, setUserInterests } from "../redux/slices/arConnectionSlice";
 import { useNavigate } from "react-router-dom";
 import { setDarkMode } from "../redux/slices/darkModeSlice";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Define RootState type that matches our redux structure
 interface RootState {
@@ -25,26 +25,47 @@ export interface GoogleUserInfo {
 
 // Hook for Google user info
 export const useGoogleUser = () => {
-  const [googleUser, setGoogleUser] = useState<GoogleUserInfo | null>(() => {
-    const savedUser = localStorage.getItem('google_user_info');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [googleUser, setGoogleUser] = useState<GoogleUserInfo | null>(null);
 
-  const setGoogleUserInfo = (userInfo: GoogleUserInfo | null) => {
-    setGoogleUser(userInfo);
-    if (userInfo) {
-      localStorage.setItem('google_user_info', JSON.stringify(userInfo));
-    } else {
-      localStorage.removeItem('google_user_info');
+  useEffect(() => {
+    function getGoogleUser(): GoogleUserInfo | null {
+      const user = localStorage.getItem('google_user');
+      return user ? JSON.parse(user) : null;
     }
+    
+    const storedUser = getGoogleUser();
+    if (storedUser) {
+      setGoogleUser(storedUser);
+    }
+  }, []);
+
+  const disconnectGoogle = async () => {
+    // Try to revoke the token with Google
+    try {
+      const user = googleUser || JSON.parse(localStorage.getItem('google_user') || '{}');
+      if (user && user.accessToken) {
+        await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${user.accessToken}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error revoking Google token:', error);
+    }
+    
+    // Clear from localStorage regardless of revocation success
+    localStorage.removeItem('google_access_token');
+    localStorage.removeItem('google_token_timestamp');
+    localStorage.removeItem('google_connected');
+    localStorage.removeItem('google_user');
+    
+    // Update state
+    setGoogleUser(null);
   };
 
-  const disconnectGoogle = () => {
-    setGoogleUserInfo(null);
-    localStorage.removeItem('googleAccessToken');
-  };
-
-  return { googleUser, setGoogleUserInfo, disconnectGoogle };
+  return { googleUser, disconnectGoogle };
 };
 
 // Move hooks into custom hook
