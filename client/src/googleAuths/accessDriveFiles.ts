@@ -12,7 +12,7 @@ interface GoogleDriveResponse {
 
 const accessDriveFiles = async (accessToken: string): Promise<GoogleDriveFile[]> => {
     try {
-        const response = await fetch('https://www.googleapis.com/drive/v3/files?pageSize=10&fields=files(id,name,mimeType)', {
+        const response = await fetch('https://www.googleapis.com/drive/v3/files?fields=files(id,name,mimeType)', {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
