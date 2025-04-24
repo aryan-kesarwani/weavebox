@@ -7,6 +7,7 @@ import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { storeFile } from '../utils/fileStorage';
+import { uploadArweave } from '../utils/turbo';
 
 const Upload = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -61,24 +62,16 @@ const Upload = () => {
     setUploadProgress(0);
     
     try {
-      // Simulate progress
-      const simulateProgress = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(simulateProgress);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
+      // Request necessary permissions
+      await window.arweaveWallet.connect(['ACCESS_PUBLIC_KEY', 'SIGN_TRANSACTION', 'SIGNATURE']);
       
       // Store the file in IndexedDB
       await storeFile(selectedFile, userAddress || '');
       
-      // Complete the upload
-      clearInterval(simulateProgress);
+      // Upload to Arweave
+      await uploadArweave();
+      
       setUploadProgress(100);
-      setIsUploading(false);
       
       toast.success('File uploaded successfully!', {
         position: "bottom-right",
@@ -104,6 +97,7 @@ const Upload = () => {
         position: "bottom-right",
         autoClose: 3000,
       });
+    } finally {
       setIsUploading(false);
     }
   };

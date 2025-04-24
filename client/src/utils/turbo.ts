@@ -1,6 +1,7 @@
 import mime from 'mime-types';
 import { TurboFactory, ArconnectSigner } from '@ardrive/turbo-sdk/web';
 import { db, FileRecord } from './db';
+import { Readable } from 'stream';
 
 export const uploadArweave = async () => {
   // Fetch all files from the database
@@ -15,38 +16,42 @@ export const uploadArweave = async () => {
   const signer = new ArconnectSigner(window.arweaveWallet);
   const turbo = TurboFactory.authenticated({ signer });
 
-  // Fetch the current balance
-  const { winc: balance } = await turbo.getBalance();
-  console.log(`Current balance: ${balance} Winc`);
-
   for (const file of files) {
     const { name: fileName, data, sizeInBytes: fileSize, contentType } = file;
+    const fileExtension = fileName.split('.').pop() || '';
+    const baseName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
 
-    // Calculate upload costs
-    const [{ winc: fileSizeCost }] = await turbo.getUploadCosts({ bytes: [fileSize] });
-    console.log(`File: ${fileName}, Size: ${fileSize} bytes, Cost: ${fileSizeCost} Winc`);
+    // Skip balance check for files under 100KB (free upload)
+    if (fileSize > 100 * 1024) {
+      // Calculate upload costs only for files over 100KB
+      const [{ winc: fileSizeCost }] = await turbo.getUploadCosts({ bytes: [fileSize] });
+      console.log(`File: ${fileName}, Size: ${fileSize} bytes, Cost: ${fileSizeCost} Winc`);
+    } else {
+      console.log(`File: ${fileName}, Size: ${fileSize} bytes (Free upload)`);
+    }
 
     try {
-      const buffer = await data.arrayBuffer(); // Convert the Blob to an ArrayBuffer
+      const buffer = await data.arrayBuffer();
       const uploadResult = await turbo.uploadFile({
-        fileStreamFactory: () =>
-          new ReadableStream({
+        fileStreamFactory: () => {
+          return new ReadableStream({
             start(controller) {
-              controller.enqueue(buffer); // Enqueue the ArrayBuffer
-              controller.close(); // Close the stream
-            },
-          }),
+              controller.enqueue(new Uint8Array(buffer));
+              controller.close();
+            }
+          });
+        },
         fileSizeFactory: () => fileSize,
-        fileMetaDataFactory: () => ({
-          fileName: fileName,
-          contentType: contentType || mime.lookup(fileName) || 'application/octet-stream',
-        }),
+        fileName: `${baseName}.${fileExtension}`,
+        contentType: contentType || mime.lookup(fileName) || 'application/octet-stream',
         dataItemOpts: {
           tags: [
             { name: 'Content-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' },
-          ],
-        },
-      });
+            { name: 'File-Extension', value: fileExtension },
+            { name: 'File-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' }
+          ]
+        }
+      } as any);
 
       console.log(`Uploaded ${fileName} (${contentType}) successfully. TX ID: ${uploadResult.id}`);
 
