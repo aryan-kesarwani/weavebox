@@ -8,6 +8,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import API from '../globals/axiosConfig';
 import { getStoredFiles, storeFile, StoredFile } from '../utils/fileStorage';
+import Sidebar from '../components/Sidebar'; // Import the Sidebar component
 
 const Uploads = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -462,32 +463,8 @@ const Uploads = () => {
           </div>
         </div>
       )}
-      <motion.div
-        initial={false}
-        animate={{ width: isSidebarOpen ? '250px' : '0px' }}
-        className="fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-40 overflow-hidden"
-      >
-        <div className="p-4 space-y-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/dashboard')}
-            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-          >
-            <FiUpload size={20} />
-            <span>Upload</span>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/uploads')}
-            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 bg-gray-100 dark:bg-gray-700"
-          >
-            <FiFolder size={20} />
-            <span>View Uploads</span>
-          </motion.button>
-        </div>
-      </motion.div>
+      {/* Replace the sidebar with the Sidebar component */}
+      <Sidebar isSidebarOpen={isSidebarOpen} currentPage="uploads" />
       <div className="pt-16 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between mb-8">

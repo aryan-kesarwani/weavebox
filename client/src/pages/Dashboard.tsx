@@ -8,6 +8,7 @@ import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getStoredFiles, StoredFile } from '../utils/fileStorage';
+import Sidebar from '../components/Sidebar'; // Import the Sidebar component
 
 // Declare the google namespace for TypeScript
 declare global {
@@ -225,33 +226,8 @@ const Dashboard = ({ onFolderClick }: Props) => {
         </div>
       </nav>
 
-      {/* Sidebar */}
-      <motion.div
-        initial={false}
-        animate={{ width: isSidebarOpen ? '250px' : '0px' }}
-        className="fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-40 overflow-hidden"
-      >
-        <div className="p-4 space-y-4">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/dashboard')}
-            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 bg-gray-100 dark:bg-gray-700"
-          >
-            <FiUpload size={20} />
-            <span>Upload</span>
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/uploads')}
-            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-          >
-            <FiFolder size={20} />
-            <span>View Uploads</span>
-          </motion.button>
-        </div>
-      </motion.div>
+      {/* Replace the sidebar with the Sidebar component */}
+      <Sidebar isSidebarOpen={isSidebarOpen} currentPage="dashboard" />
 
       {/* Main Content */}
       <div className="pt-16 min-h-screen">
