@@ -1,29 +1,28 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiMenu, FiX, FiUpload, FiUser, FiFolder } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
-import { useArweaveWallet, useDarkMode } from '../utils/util';
+import { FiUpload } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
 import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { storeFile } from '../utils/fileStorage';
-
+import Navbar from '../components/Navbar';
 import { uploadArweave } from '../utils/turbo';
-
 import Sidebar from '../components/Sidebar'; // Import the Sidebar component
 
 
+
 const Upload = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [priceEstimate, setPriceEstimate] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const navigate = useNavigate();
-  const { userAddress, handleDisconnect } = useArweaveWallet();
-  const { darkMode, toggleDarkMode } = useDarkMode();
-  
+  const { userAddress } = useArweaveWallet();
+  const { darkMode } = useDarkMode();
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -35,10 +34,8 @@ const Upload = () => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       setSelectedFile(acceptedFiles[0]);
-      // Calculate price estimate
       const fileSize = acceptedFiles[0].size;
-      // Show 0 AR for files less than 100KB
-      const price = fileSize < 100 * 1024 ? 0 : (fileSize / 1000000) * 0.1; // $0.1 per MB for files >= 100KB
+      const price = fileSize < 100 * 1024 ? 0 : (fileSize / 1000000) * 0.1;
       setPriceEstimate(`$${price.toFixed(4)}`);
     }
   }, []);
@@ -54,18 +51,14 @@ const Upload = () => {
     }
   });
 
-  const handleDisconnectWallet = () => {
-    handleDisconnect();
-    navigate('/');
-  };
-
   const handleUpload = async () => {
     if (!selectedFile) return;
-    
+
     setIsUploading(true);
     setUploadProgress(0);
-    
+
     try {
+
       // Request necessary permissions
       await window.arweaveWallet.connect(['ACCESS_PUBLIC_KEY', 'SIGN_TRANSACTION', 'SIGNATURE']);
       
@@ -77,6 +70,7 @@ const Upload = () => {
       
       setUploadProgress(100);
       
+
       toast.success('File uploaded successfully!', {
         position: "bottom-right",
         autoClose: 3000,
@@ -85,16 +79,14 @@ const Upload = () => {
         pauseOnHover: true,
         draggable: true,
       });
-      
-      // Clear the selected file after successful upload
+
       setSelectedFile(null);
       setPriceEstimate(null);
-      
-      // Redirect to uploads page after a short delay
+
       setTimeout(() => {
         navigate('/uploads');
       }, 1500);
-      
+
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error('Failed to upload file. Please try again.', {
@@ -106,10 +98,8 @@ const Upload = () => {
     }
   };
 
-  // Add cleanup when navigating away
   useEffect(() => {
     return () => {
-      // Clean up when component unmounts (user navigates away)
       setSelectedFile(null);
       setPriceEstimate(null);
     };
@@ -118,80 +108,21 @@ const Upload = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       <ToastContainer theme={darkMode ? 'dark' : 'light'} />
-      {/* Navbar */}
-      <nav className="fixed w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {isSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-              </button>
-              <Link to="/" className="ml-4 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                WeaveBox
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={toggleDarkMode}
-                className="p-3 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {darkMode ? (
-                  <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-              </button>
-              
-              {/* Profile Button */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center space-x-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <FiUser size={20} />
-                  <span className="hidden md:inline">{userAddress?.slice(0, 6)}...</span>
-                </button>
-                
-                {/* Profile Dropdown */}
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2">
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Wallet Address</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 break-all">{userAddress}</p>
-                    </div>
-                    <button
-                      onClick={handleDisconnectWallet}
-                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Disconnect Wallet
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
+      
+      <Navbar 
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        currentPage="upload"
+      />
 
-      {/* Replace the sidebar with the Sidebar component */}
       <Sidebar isSidebarOpen={isSidebarOpen} currentPage="upload" />
 
-      {/* Main Content */}
-      <div className="pt-16 min-h-screen">
+      <div className={`pt-16 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'ml-[250px]' : 'ml-0'}`}>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <h1 className="text-4xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
             Upload File to Arweave
           </h1>
 
-          {/* Drag and Drop Area */}
           <div
             {...getRootProps()}
             className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors
@@ -214,7 +145,6 @@ const Upload = () => {
             </div>
           </div>
 
-          {/* File Details and Price Estimate */}
           {selectedFile && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}

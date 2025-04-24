@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMenu, FiX, FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiExternalLink, FiDownload } from 'react-icons/fi';
+import { FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiExternalLink, FiDownload, FiX } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
 import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Sidebar from '../components/Sidebar'; // Import the Sidebar component
+import Navbar from '../components/Navbar'; // Import the Navbar component
 import { imageCacheDB } from '../utils/imageCacheDB'; // Import the cache utility
 import { storeFile } from '../utils/fileStorage';
 import UploadConfirmationModal from '../components/UploadConfirmationModal';
@@ -23,7 +24,7 @@ interface GoogleDriveFile {
 }
 
 const GoogleDrive = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
@@ -54,10 +55,13 @@ const GoogleDrive = () => {
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [uploadComplete, setUploadComplete] = useState(false);
 
+  const [authError, setAuthError] = useState(false);
+  const [isRefreshingToken, setIsRefreshingToken] = useState(false);
+
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
   const { darkMode, toggleDarkMode } = useDarkMode();
-  const { googleUser, disconnectGoogle } = useGoogleUser();
+  useGoogleUser();
 
   // Check for Google token and load files
   useEffect(() => {
@@ -69,7 +73,7 @@ const GoogleDrive = () => {
       setIsGoogleConnected(true);
       loadFiles(currentFolderId, token);
     } else {
-      navigate('/dashboard');
+      setAuthError(true);
     }
   }, []);
 
@@ -110,18 +114,132 @@ const GoogleDrive = () => {
 
   // Load files from Google Drive
   const loadFiles = async (folderId: string = 'root', token: string = googleToken || '') => {
-    if (!token) return;
+    if (!token) {
+      setAuthError(true);
+      return;
+    }
 
     setIsLoading(true);
+    setAuthError(false);
+    
     try {
       const result = await accessDriveFiles(token, folderId);
       setFiles(result);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching files:', error);
-      toast.error('Failed to load Google Drive files');
-    } finally {
-      setIsLoading(false);
+      
+      // Check if it's an authentication error (typically 401)
+      const isAuthError = error instanceof Error && 
+        error.message.includes('401') || 
+        (error instanceof Error && error.message.includes('auth'));
+      
+      if (isAuthError && !isRefreshingToken) {
+        // Try to refresh the token
+        await refreshGoogleToken();
+      } else {
+        toast.error('Failed to load Google Drive files');
+        setAuthError(true);
+        setIsLoading(false);
+      }
     }
+  };
+
+  // Add a function to refresh the Google token
+  const refreshGoogleToken = async () => {
+    setIsRefreshingToken(true);
+    
+    try {
+      // Initialize Google OAuth2 client for token refresh
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+        callback: async (response: { access_token: string }) => {
+          if (response.access_token) {
+            console.log('Token refreshed successfully');
+            // Store the refreshed token
+            localStorage.setItem('google_access_token', response.access_token);
+            localStorage.setItem('google_token_timestamp', Date.now().toString());
+            
+            // Update state
+            setGoogleToken(response.access_token);
+            
+            // Try loading files again with the new token
+            await loadFiles(currentFolderId, response.access_token);
+          } else {
+            setAuthError(true);
+          }
+          setIsRefreshingToken(false);
+        },
+        error_callback: () => {
+          console.error('Failed to refresh Google token');
+          setAuthError(true);
+          setIsRefreshingToken(false);
+        }
+      });
+
+      // Request a new access token
+      client.requestAccessToken();
+    } catch (error) {
+      console.error('Error during token refresh:', error);
+      setAuthError(true);
+      setIsRefreshingToken(false);
+    }
+  };
+
+  // Add function to handle new Google sign-in
+  const handleGoogleSignIn = () => {
+    // Initialize Google OAuth2 client
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+      callback: async (response: { access_token: string }) => {
+        if (response.access_token) {
+          try {
+            // Store the token in localStorage
+            localStorage.setItem('google_access_token', response.access_token);
+            localStorage.setItem('google_token_timestamp', Date.now().toString());
+            localStorage.setItem('google_connected', 'true');
+            
+            // Fetch user info from Google API
+            const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+              headers: {
+                'Authorization': `Bearer ${response.access_token}`
+              }
+            });
+            
+            if (userInfoResponse.ok) {
+              const userInfo = await userInfoResponse.json();
+              
+              // Store user info
+              const googleUserData = {
+                name: userInfo.name,
+                email: userInfo.email,
+                picture: userInfo.picture,
+                id: userInfo.id,
+                accessToken: response.access_token
+              };
+              
+              localStorage.setItem('google_user', JSON.stringify(googleUserData));
+            }
+            
+            // Update state and load files
+            setGoogleToken(response.access_token);
+            setIsGoogleConnected(true);
+            setAuthError(false);
+            await loadFiles(currentFolderId, response.access_token);
+            
+          } catch (error) {
+            console.error('Error during Google sign-in:', error);
+            toast.error('Failed to connect to Google Drive');
+            setAuthError(true);
+          }
+        }
+      }
+    });
+
+    // Request access token
+    client.requestAccessToken();
   };
 
   // Navigate to a folder
@@ -148,9 +266,13 @@ const GoogleDrive = () => {
   };
 
   const handleDisconnectGoogle = () => {
+    // Clear all Google-related data from localStorage
     localStorage.removeItem('google_access_token');
     localStorage.removeItem('google_token_timestamp');
     localStorage.removeItem('google_connected');
+    localStorage.removeItem('google_user');
+    
+    // Navigate to dashboard
     navigate('/dashboard');
   };
 
@@ -616,94 +738,18 @@ const GoogleDrive = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       <ToastContainer theme={darkMode ? 'dark' : 'light'} />
       
-      {/* Navbar */}
-      <nav className="fixed w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                {isSidebarOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-              </button>
-              <Link to="/" className="ml-4 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                WeaveBox
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={toggleDarkMode}
-                className="p-3 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                aria-label="Toggle theme"
-              >
-                {darkMode ? (
-                  <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-              </button>
-              
-              {/* Profile Button - Shows Google user */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center space-x-2 p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  {googleUser?.picture ? (
-                    <img 
-                      src={googleUser.picture} 
-                      alt={googleUser.name} 
-                      className="w-7 h-7 rounded-full"
-                    />
-                  ) : (
-                    <FiUser size={20} />
-                  )}
-                  <span className="hidden md:inline">{googleUser?.name || userAddress?.slice(0, 6) + '...'}</span>
-                </button>
-                
-                {/* Profile Dropdown */}
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2">
-                    {googleUser && (
-                      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">Google Account</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 break-all">{googleUser.email}</p>
-                        <button
-                          onClick={handleDisconnectGoogle}
-                          className="mt-2 px-2 py-1 text-xs text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                        >
-                          Disconnect Google
-                        </button>
-                      </div>
-                    )}
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Wallet Address</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 break-all">{userAddress}</p>
-                    </div>
-                    <button
-                      onClick={handleDisconnectWallet}
-                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Disconnect Wallet
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Use the Navbar component */}
+      <Navbar 
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        currentPage="google-drive"
+      />
 
-      {/* Replace the sidebar with the Sidebar component */}
+      {/* Sidebar */}
       <Sidebar isSidebarOpen={isSidebarOpen} currentPage="google-drive" />
 
       {/* Main Content */}
-      <div className="pt-16 min-h-screen">
+      <div className={`pt-16 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'ml-[250px]' : 'ml-0'}`}>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-center md:text-left bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-4 md:mb-0">
@@ -802,15 +848,54 @@ const GoogleDrive = () => {
             )}
           </div>
 
+          {/* Authentication Error UI */}
+          {authError && (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <img 
+                src="https://www.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png" 
+                alt="Google Drive" 
+                className="w-16 h-16 mb-6"
+              />
+              <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4 text-center">
+                Unable to access your Google Drive files
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-8 text-center max-w-md">
+                Your Google Drive session may have expired or you might need to reconnect your account.
+              </p>
+              
+              <button
+                onClick={handleGoogleSignIn}
+                className="flex items-center justify-center px-6 py-3 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+              >
+                <svg viewBox="0 0 24 24" width="24" height="24" className="mr-3">
+                  <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
+                    <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
+                    <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
+                    <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z" />
+                    <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
+                  </g>
+                </svg>
+                Sign in with Google
+              </button>
+              
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          )}
+
           {/* Loading State */}
-          {isLoading && (
+          {isLoading && !authError && (
             <div className="flex justify-center my-12">
               <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
 
-          {/* Files Grid */}
-          {!isLoading && sortedFiles.length > 0 ? (
+          {/* Files Grid - Only show when not in auth error state */}
+          {!isLoading && !authError && sortedFiles.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {sortedFiles.map((file) => (
                 <motion.div
@@ -1012,7 +1097,7 @@ const GoogleDrive = () => {
                 </motion.div>
               ))}
             </div>
-          ) : (!isLoading && (
+          ) : (!isLoading && !authError && (
             <div className="flex flex-col items-center justify-center py-16">
               <FiFolder size={64} className="text-gray-400 dark:text-gray-600 mb-4" />
               <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">

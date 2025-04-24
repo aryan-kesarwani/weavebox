@@ -35,7 +35,7 @@ const Sidebar = ({ isSidebarOpen, currentPage }: SidebarProps) => {
 
   return (
     <motion.div
-      initial={false}
+      initial={{ width: '250px' }}
       animate={{ width: isSidebarOpen ? '250px' : '0px' }}
       className="fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-40 overflow-hidden"
     >
