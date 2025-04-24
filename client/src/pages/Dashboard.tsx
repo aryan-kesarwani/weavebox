@@ -28,12 +28,23 @@ declare global {
   }
 }
 
-const Dashboard = () => {
+interface GoogleDriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+}
+
+type Props = {
+  onFolderClick?: (folderId: string) => void; // Optional: For in-app folder navigation
+};
+
+const Dashboard = ({ onFolderClick }: Props) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [selectedFileDetails, setSelectedFileDetails] = useState<number | null>(null);
   const [fileDetailModal, setFileDetailModal] = useState<number | null>(null);
   const [previewModal, setPreviewModal] = useState<number | null>(null);
+  const [files, setFiles] = useState<GoogleDriveFile[]>([]);
 
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
@@ -109,7 +120,8 @@ const Dashboard = () => {
         if (response.access_token) {
           try {
             // Send the access token to your backend
-            const result = await accessDriveFiles(response.access_token);
+            const result : GoogleDriveFile[] = await accessDriveFiles(response.access_token);
+            setFiles(result)
             console.log(result);
           } catch (error) {
             console.error('Error during login:', error);
@@ -143,6 +155,51 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
+      <div>
+      <h2>My Google Drive Files</h2>
+      <ul>
+    {files.map(file => {
+      if (file.mimeType === 'application/vnd.google-apps.folder') {
+        // Folder: either link to Google Drive or handle in-app navigation
+        return (
+          <li key={file.id}>
+            {onFolderClick ? (
+              <button onClick={() => onFolderClick(file.id)}>📁 {file.name}</button>
+            ) : (
+              <a
+                href={`https://drive.google.com/drive/folders/${file.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📁 {file.name}
+              </a>
+            )}
+          </li>
+        );
+      }
+      // File: link to open in Google Drive
+      return (
+        <li key={file.id}>
+          <a
+            href={`https://drive.google.com/file/d/${file.id}/view`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {file.mimeType.startsWith('image/') && (
+              <img
+                src={`https://drive.google.com/uc?id=${file.id}`}
+                alt={file.name}
+                width={50}
+                style={{ marginRight: 8 }}
+              />
+            )}
+            📄 {file.name}
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+    </div>
       {/* Navbar */}
       <nav className="fixed w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md z-50">
         <div className="max-w-7xl mx-auto px-4">
