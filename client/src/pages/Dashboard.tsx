@@ -7,6 +7,7 @@ import { useArweaveWallet, useDarkMode } from '../utils/util';
 import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getStoredFiles, StoredFile } from '../utils/fileStorage';
 
 // Declare the google namespace for TypeScript
 declare global {
@@ -49,60 +50,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
   const { userAddress, handleDisconnect } = useArweaveWallet();
   const { darkMode, toggleDarkMode } = useDarkMode();
 
-  const [recentFiles, setRecentFiles] = useState([
-    { 
-      id: 1, 
-      name: 'vacation.jpg', 
-      type: 'image', 
-      url: 'https://source.unsplash.com/random/300x300?vacation', 
-      date: '2025-04-20', 
-      time: '14:35:22',
-      size: '2.3 MB',
-      txHash: 'Dx7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui8',
-      contentType: 'image/jpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress || 'Unknown'
-    },
-    { 
-      id: 4, 
-      name: 'beach.jpg', 
-      type: 'image', 
-      url: 'https://source.unsplash.com/random/300x300?beach', 
-      date: '2025-04-10', 
-      time: '10:15:45',
-      size: '3.2 MB',
-      txHash: 'Ax7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui9',
-      contentType: 'image/jpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress || 'Unknown'
-    },
-    { 
-      id: 6, 
-      name: 'tutorial.mp4', 
-      type: 'video', 
-      url: '', 
-      date: '2025-04-01', 
-      time: '08:25:30',
-      size: '15.2 MB',
-      txHash: 'Bx7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui7',
-      contentType: 'video/mp4',
-      permanentlyStored: true,
-      uploadedBy: userAddress || 'Unknown'
-    },
-    { 
-      id: 2, 
-      name: 'document.pdf', 
-      type: 'document', 
-      url: '', 
-      date: '2025-04-18', 
-      time: '12:45:00',
-      size: '1.1 MB',
-      txHash: 'Cx7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui6',
-      contentType: 'application/pdf',
-      permanentlyStored: true,
-      uploadedBy: userAddress || 'Unknown'
-    },
-  ]);
+  const [recentFiles, setRecentFiles] = useState<StoredFile[]>([]);
 
   useEffect(() => {
     if (darkMode) {
@@ -141,6 +89,26 @@ const Dashboard = ({ onFolderClick }: Props) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [selectedFileDetails]);
+
+  useEffect(() => {
+    // Load files from IndexedDB
+    const loadFiles = async () => {
+      const storedFiles = await getStoredFiles();
+      // Only show the 4 most recent files
+      setRecentFiles(storedFiles.slice(0, 4));
+    };
+    
+    loadFiles();
+    
+    // Clean up object URLs when component unmounts
+    return () => {
+      recentFiles.forEach(file => {
+        if (file.url && file.url.startsWith('blob:')) {
+          URL.revokeObjectURL(file.url);
+        }
+      });
+    };
+  }, []);
 
   const handleGoogleLogin = () => {
     // Initialize Google OAuth2 client
@@ -410,7 +378,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedFileDetails(selectedFileDetails === file.id ? null : file.id);
+                        setSelectedFileDetails(file.id !== undefined && selectedFileDetails === file.id ? null : file.id ?? null);
                       }}
                       className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white file-menu-button"
                     >
@@ -422,7 +390,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                     {/* File card onClick handler - to open preview */}
                     <div 
                       className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer"
-                      onClick={() => setPreviewModal(file.id)}
+                      onClick={() => setPreviewModal(file.id ?? null)}
                     >
                       {file.type === 'image' ? (
                         <img 
@@ -448,7 +416,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedFileDetails(null);
-                              setFileDetailModal(file.id);
+                              setFileDetailModal(file.id ?? null);
                             }}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                           >
@@ -479,7 +447,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedFileDetails(null);
-                              setPreviewModal(file.id);
+                              setPreviewModal(file.id ?? null);
                             }}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                           >
@@ -522,10 +490,18 @@ const Dashboard = ({ onFolderClick }: Props) => {
               <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
                 <div className="flex flex-col items-center justify-center">
                   <FiFolder size={48} className="text-gray-400 dark:text-gray-600 mb-4" />
-                  <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">No recent files</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mt-2">
+                  <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">No files uploaded yet</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mt-2 mb-6">
                     Upload some files to see them here
                   </p>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => navigate('/upload')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Upload Your First File
+                  </motion.button>
                 </div>
               </div>
             )}
@@ -618,7 +594,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                       <button 
                         onClick={() => {
                           setFileDetailModal(null);
-                          setPreviewModal(file.id);
+                          setPreviewModal(file.id ?? null);
                         }}
                         className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex items-center"
                       >

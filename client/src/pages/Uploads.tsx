@@ -7,6 +7,7 @@ import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import API from '../globals/axiosConfig';
+import { getStoredFiles, storeFile, StoredFile } from '../utils/fileStorage';
 
 const Uploads = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,176 +30,7 @@ const Uploads = () => {
   const { userAddress, handleDisconnect } = useArweaveWallet();
   const { darkMode, toggleDarkMode } = useDarkMode();
 
-  const [uploadedFiles, setUploadedFiles] = useState([
-    { 
-      id: 1, 
-      name: 'vacation.jpg', 
-      type: 'image', 
-      url: 'https://source.unsplash.com/random/300x300?vacation', 
-      date: '2025-04-20', 
-      time: '14:35:22',
-      size: '2.3 MB', 
-      sizeInBytes: 2408448,
-      txHash: 'Dx7qi8kF0JkjZ-rwDuJRuq4-6YY4b0Wla0nh2vK2Ui8',
-      contentType: 'image/jpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 2, 
-      name: 'document.pdf', 
-      type: 'document', 
-      url: '', 
-      date: '2025-04-18', 
-      time: '10:15:00',
-      size: '1.1 MB', 
-      sizeInBytes: 1153434,
-      txHash: 'TxHashExample2',
-      contentType: 'application/pdf',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 3, 
-      name: 'presentation.pptx', 
-      type: 'document', 
-      url: '', 
-      date: '2025-04-15', 
-      time: '08:45:30',
-      size: '4.7 MB', 
-      sizeInBytes: 4928307,
-      txHash: 'TxHashExample3',
-      contentType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 4, 
-      name: 'beach.jpg', 
-      type: 'image', 
-      url: 'https://source.unsplash.com/random/300x300?beach', 
-      date: '2025-04-10', 
-      time: '16:20:00',
-      size: '3.2 MB', 
-      sizeInBytes: 3355443,
-      txHash: 'TxHashExample4',
-      contentType: 'image/jpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 5, 
-      name: 'music.mp3', 
-      type: 'audio', 
-      url: '', 
-      date: '2025-04-05', 
-      time: '12:00:00',
-      size: '5.8 MB', 
-      sizeInBytes: 6082560,
-      txHash: 'TxHashExample5',
-      contentType: 'audio/mpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 6, 
-      name: 'tutorial.mp4', 
-      type: 'video', 
-      url: '', 
-      date: '2025-04-01', 
-      time: '09:30:00',
-      size: '15.2 MB', 
-      sizeInBytes: 15937536,
-      txHash: 'TxHashExample6',
-      contentType: 'video/mp4',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 7, 
-      name: 'mountains.jpg', 
-      type: 'image', 
-      url: 'https://source.unsplash.com/random/300x300?mountains', 
-      date: '2025-03-28', 
-      time: '18:45:00',
-      size: '2.9 MB', 
-      sizeInBytes: 3040722,
-      txHash: 'TxHashExample7',
-      contentType: 'image/jpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 8, 
-      name: 'contract.docx', 
-      type: 'document', 
-      url: '', 
-      date: '2025-03-25', 
-      time: '11:00:00',
-      size: '0.8 MB', 
-      sizeInBytes: 838860,
-      txHash: 'TxHashExample8',
-      contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 9, 
-      name: 'code.zip', 
-      type: 'archive', 
-      url: '', 
-      date: '2025-03-20', 
-      time: '14:00:00',
-      size: '7.3 MB', 
-      sizeInBytes: 7654604,
-      txHash: 'TxHashExample9',
-      contentType: 'application/zip',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 10, 
-      name: 'sunset.jpg', 
-      type: 'image', 
-      url: 'https://source.unsplash.com/random/300x300?sunset', 
-      date: '2025-03-15', 
-      time: '19:30:00',
-      size: '1.6 MB', 
-      sizeInBytes: 1677721,
-      txHash: 'TxHashExample10',
-      contentType: 'image/jpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 11, 
-      name: 'podcast.mp3', 
-      type: 'audio', 
-      url: '', 
-      date: '2025-03-10', 
-      time: '08:00:00',
-      size: '12.4 MB', 
-      sizeInBytes: 13004185,
-      txHash: 'TxHashExample11',
-      contentType: 'audio/mpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-    { 
-      id: 12, 
-      name: 'forest.jpg', 
-      type: 'image', 
-      url: 'https://source.unsplash.com/random/300x300?forest', 
-      date: '2025-03-05', 
-      time: '15:00:00',
-      size: '2.1 MB', 
-      sizeInBytes: 2202010,
-      txHash: 'TxHashExample12',
-      contentType: 'image/jpeg',
-      permanentlyStored: true,
-      uploadedBy: userAddress
-    },
-  ]);
+  const [uploadedFiles, setUploadedFiles] = useState<StoredFile[]>([]);
 
   useEffect(() => {
     if (darkMode) {
@@ -255,6 +87,23 @@ const Uploads = () => {
     };
   }, [selectedFileDetails]);
 
+  useEffect(() => {
+    const loadFiles = async () => {
+      const storedFiles = await getStoredFiles();
+      setUploadedFiles(storedFiles);
+    };
+    
+    loadFiles();
+    
+    return () => {
+      uploadedFiles.forEach(file => {
+        if (file.url && file.url.startsWith('blob:')) {
+          URL.revokeObjectURL(file.url);
+        }
+      });
+    };
+  }, []);
+
   const handleDisconnectWallet = () => {
     handleDisconnect();
     navigate('/');
@@ -297,26 +146,45 @@ const Uploads = () => {
     setIsUploading(true);
     setUploadProgress(0);
     
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          toast.success('File uploaded successfully!', {
-            position: "bottom-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-          clearFileSelection();
-          setShowUploadPopup(false);
-          return 100;
-        }
-        return prev + 10;
+    try {
+      const simulateProgress = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(simulateProgress);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 300);
+      
+      const newFile = await storeFile(selectedFile, userAddress || '');
+      
+      clearInterval(simulateProgress);
+      setUploadProgress(100);
+      
+      setUploadedFiles(prevFiles => [newFile, ...prevFiles]);
+      
+      setIsUploading(false);
+      toast.success('File uploaded successfully!', {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
       });
-    }, 500);
+      
+      clearFileSelection();
+      setShowUploadPopup(false);
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload file. Please try again.', {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      setIsUploading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
@@ -733,7 +601,7 @@ const Uploads = () => {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedFileDetails(selectedFileDetails === file.id ? null : file.id);
+                      setSelectedFileDetails(file.id !== undefined && selectedFileDetails === file.id ? null : file.id || null);
                     }}
                     className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white file-menu-button"
                   >
@@ -745,11 +613,11 @@ const Uploads = () => {
                   {/* File card onClick handler - opens preview */}
                   <div 
                     className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-                    onClick={() => setPreviewModal(file.id)}
+                    onClick={() => setPreviewModal(file.id ?? null)}
                   >
                     {file.type === 'image' ? (
                       <img 
-                        src={file.url} 
+                        src={file.url || `https://source.unsplash.com/random/300x300?${file.name.split('.')[0]}`} 
                         alt={file.name} 
                         className="w-full h-full object-cover"
                       />
@@ -786,7 +654,7 @@ const Uploads = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedFileDetails(null);
-                            setFileDetailModal(file.id);
+                            setFileDetailModal(file.id ?? null);
                           }}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                         >
@@ -818,7 +686,7 @@ const Uploads = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedFileDetails(null);
-                            setPreviewModal(file.id);
+                            setPreviewModal(file.id ?? null);
                           }}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                         >
@@ -983,7 +851,7 @@ const Uploads = () => {
                       <button 
                         onClick={() => {
                           setFileDetailModal(null);
-                          setPreviewModal(file.id);
+                          setPreviewModal(file.id ?? null);
                         }}
                         className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex items-center"
                       >

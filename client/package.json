@@ -17,6 +17,7 @@
     "arweave": "^1.15.7",
     "buffer": "^6.0.3",
     "client": "file:",
+    "dexie": "^4.0.11",
     "framer-motion": "^12.7.5",
     "google-auth": "^0.0.1",
     "google-auth-library": "^9.15.1",
