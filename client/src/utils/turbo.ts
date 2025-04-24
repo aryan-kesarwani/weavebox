@@ -16,6 +16,9 @@ export const uploadArweave = async () => {
   const signer = new ArconnectSigner(window.arweaveWallet);
   const turbo = TurboFactory.authenticated({ signer });
 
+  // Get the active wallet address
+  const walletAddress = await window.arweaveWallet.getActiveAddress();
+
   for (const file of files) {
     const { name: fileName, data, sizeInBytes: fileSize, contentType } = file;
     const fileExtension = fileName.split('.').pop() || '';
@@ -48,7 +51,8 @@ export const uploadArweave = async () => {
           tags: [
             { name: 'Content-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' },
             { name: 'File-Extension', value: fileExtension },
-            { name: 'File-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' }
+            { name: 'File-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' },
+            { name: 'Wallet-Address', value: walletAddress }
           ]
         }
       } as any);
