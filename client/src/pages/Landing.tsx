@@ -63,9 +63,9 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gradient-to-tr dark:from-purple-700 dark:via-white dark:to-green-500 transition-colors duration-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       {/* Navbar */}
-      <nav className="fixed w-full bg-white/80 dark:bg-black/40 backdrop-blur-md shadow-md z-50">
+      <nav className="fixed w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-md z-50">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center">
@@ -177,7 +177,7 @@ const Landing = () => {
             <div className="w-full max-w-4xl mx-auto mt-32 mb-16">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">Why Choose Arweave Over Google Drive?</h2>
               <div className="overflow-x-auto">
-                <table className="min-w-full bg-white dark:bg-black/30 rounded-xl shadow-xl">
+                <table className="min-w-full bg-white dark:bg-gray-800 rounded-xl shadow-xl">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-700">
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900 dark:text-white">Feature</th>
@@ -226,7 +226,7 @@ const Landing = () => {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-12 text-center">What Our Users Say</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {/* Testimonial 1 */}
-                <div className="bg-white dark:bg-black/30 p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
                       JD
@@ -242,7 +242,7 @@ const Landing = () => {
                 </div>
 
                 {/* Testimonial 2 */}
-                <div className="bg-white dark:bg-black/30 p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
                       SA
@@ -258,7 +258,7 @@ const Landing = () => {
                 </div>
 
                 {/* Testimonial 3 */}
-                <div className="bg-white dark:bg-black/30 p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
                       MR
@@ -336,7 +336,7 @@ const Landing = () => {
       )}
 
       {/* Footer */}
-      <footer className="bg-gray-900/90 dark:bg-black/80 backdrop-blur-sm text-gray-300 py-12">
+      <footer className="bg-gray-900 dark:bg-black text-gray-300 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* About Us */}
