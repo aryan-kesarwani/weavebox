@@ -3,7 +3,7 @@ import { RootState } from "../redux/store";
 
 const userAddress = useSelector((state: RootState) => state.arConnectionState.userAddress);
 
-const getTxns = async () => {
+export const getTxns = async () => {
 const query = {
     query: `
       query {
