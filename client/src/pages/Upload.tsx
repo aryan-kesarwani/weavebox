@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiMenu, FiX, FiUpload, FiUser } from 'react-icons/fi';
+import { FiMenu, FiX, FiUpload, FiUser, FiFolder } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { useArweaveWallet, useDarkMode } from '../utils/util';
 import { useDropzone } from 'react-dropzone';
@@ -73,12 +73,24 @@ const Upload = () => {
             pauseOnHover: true,
             draggable: true,
           });
+          // Clear the selected file after successful upload
+          setSelectedFile(null);
+          setPriceEstimate(null);
           return 100;
         }
         return prev + 10;
       });
     }, 500);
   };
+
+  // Add cleanup when navigating away
+  useEffect(() => {
+    return () => {
+      // Clean up when component unmounts (user navigates away)
+      setSelectedFile(null);
+      setPriceEstimate(null);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
@@ -145,6 +157,34 @@ const Upload = () => {
           </div>
         </div>
       </nav>
+
+      {/* Sidebar */}
+      <motion.div
+        initial={false}
+        animate={{ width: isSidebarOpen ? '250px' : '0px' }}
+        className="fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-lg z-40 overflow-hidden"
+      >
+        <div className="p-4 space-y-4">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/dashboard')}
+            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+          >
+            <FiUpload size={20} />
+            <span>Upload</span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/uploads')}
+            className="w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 bg-gray-100 dark:bg-gray-700"
+          >
+            <FiFolder size={20} />
+            <span>View Uploads</span>
+          </motion.button>
+        </div>
+      </motion.div>
 
       {/* Main Content */}
       <div className="pt-16 min-h-screen">
