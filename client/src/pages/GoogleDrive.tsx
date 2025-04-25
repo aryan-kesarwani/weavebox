@@ -79,6 +79,9 @@ const GoogleDrive = () => {
   const [authError, setAuthError] = useState(false);
   const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
+  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+  const [lastScrollTop, setLastScrollTop] = useState(0);
+
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
   const { darkMode, toggleDarkMode } = useDarkMode();
@@ -1019,6 +1022,32 @@ const GoogleDrive = () => {
     }
   };
 
+  const toggleSelectAll = () => {
+    if (selectedFiles.size === sortedFiles.length) {
+      // If all files are selected, deselect all
+      setSelectedFiles(new Set());
+      setSelectedFilesMetadata([]);
+    } else {
+      // Select all files
+      const newSelection = new Set(sortedFiles.map(file => file.id));
+      setSelectedFiles(newSelection);
+      setSelectedFilesMetadata(sortedFiles);
+    }
+  };
+
+  // Add scroll handler
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      // Show toolbar when scrolling down and past 200px
+      setShowFloatingToolbar(scrollTop > 200);
+      setLastScrollTop(scrollTop);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       <ToastContainer theme={darkMode ? 'dark' : 'light'} />
@@ -1037,226 +1066,242 @@ const GoogleDrive = () => {
       {/* Main Content */}
       <div className={`pt-16 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'ml-[250px]' : 'ml-0'}`}>
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between mb-8">
-            <h1 className="text-3xl font-bold text-center md:text-left bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-4 md:mb-0">
-              Google Drive Files
-            </h1>
-            <div className="w-full md:w-auto">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search files..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full md:w-64 px-4 py-2 pl-10 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                />
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Folder Path Breadcrumbs */}
-          <div className="flex flex-wrap items-center gap-1 mb-4 text-sm text-gray-600 dark:text-gray-400">
-            {folderPath.map((folder, index) => (
-              <div key={folder.id} className="flex items-center">
-                {index > 0 && <span className="mx-1">/</span>}
-                <button
-                  onClick={() => navigateToFolder(folder.id, folder.name)}
-                  className={`hover:text-blue-600 dark:hover:text-blue-400 ${
-                    index === folderPath.length - 1 ? 'font-medium text-blue-600 dark:text-blue-400' : ''
-                  }`}
-                >
-                  {folder.name}
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Selection Controls */}
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center">
-              <button
-                onClick={toggleSelectionMode}
-                className={`mr-4 px-4 py-2 rounded-lg flex items-center ${
-                  selectionMode 
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200' 
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
-                }`}
-              >
-                {selectionMode ? (
-                  <>
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Cancel Selection
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Select Files
-                  </>
-                )}
-              </button>
-              
-              {selectionMode && (
-                <>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 mr-4">
-                    {selectedFiles.size} selected
-                  </span>
-                  
-                  {selectedFiles.size > 0 && (
+          {/* Enhanced Selection Controls with Breadcrumbs */}
+          <div className={`flex flex-col transition-all duration-300 ${
+            showFloatingToolbar ? 'fixed top-16 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-lg z-[50] p-4 border-b border-gray-200 dark:border-gray-700' : ''
+          }`} style={{
+            marginLeft: isSidebarOpen ? '250px' : '0',
+            width: isSidebarOpen ? 'calc(100% - 250px)' : '100%',
+          }}>
+            {/* Enhanced Breadcrumb Navigation */}
+            <div className="mb-3">
+              <nav className="flex items-center space-x-2 text-sm">
+                {folderPath.map((folder, index) => (
+                  <div key={folder.id} className="flex items-center">
+                    {index > 0 && (
+                      <svg className="w-4 h-4 text-gray-400 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    )}
                     <button
-                      onClick={clearSelection}
-                      className="mr-4 px-3 py-1 text-sm rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                      onClick={() => {
+                        if (index < folderPath.length - 1) {
+                          navigateToFolder(folder.id, folder.name);
+                        }
+                      }}
+                      className={`px-2 py-1 rounded-md transition-all duration-200 ${
+                        index === folderPath.length - 1
+                          ? 'text-gray-900 dark:text-white font-medium bg-gray-100 dark:bg-gray-700 shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                      }`}
                     >
-                      Clear Selection
+                      {folder.name}
                     </button>
+                  </div>
+                ))}
+              </nav>
+            </div>
+
+            {/* Enhanced Selection Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={toggleSelectionMode}
+                  className={`px-4 py-2 rounded-lg flex items-center transition-all duration-200 shadow-sm hover:shadow-md ${
+                    selectionMode 
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900' 
+                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                  title={selectionMode ? "Cancel Selection Mode" : "Enter Selection Mode"}
+                >
+                  {selectionMode ? (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancel Selection
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Select Files
+                    </>
                   )}
-                </>
+                </button>
+                
+                {selectionMode && (
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-600 dark:text-gray-400 px-3 py-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
+                      {selectedFiles.size} selected
+                    </span>
+                    
+                    {selectedFiles.size > 0 && (
+                      <button
+                        onClick={clearSelection}
+                        className="px-3 py-1 text-sm rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md"
+                        title="Clear all selected files"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+
+                    <button
+                      onClick={toggleSelectAll}
+                      className="px-3 py-1 text-sm rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md"
+                      title={selectedFiles.size === sortedFiles.length ? "Deselect all files" : "Select all files"}
+                    >
+                      {selectedFiles.size === sortedFiles.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {selectionMode && selectedFiles.size > 0 && (
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={uploadSelectedToArweave}
+                    className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105"
+                    title="Upload selected files to Arweave"
+                  >
+                    <FiUpload className="mr-2" />
+                    Upload {selectedFiles.size} {selectedFiles.size === 1 ? 'File' : 'Files'} to Arweave
+                  </button>
+                </div>
               )}
             </div>
-            
-            {selectionMode && selectedFiles.size > 0 && (
-              <button
-                onClick={uploadSelectedToArweave}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 flex items-center"
-                disabled={selectedFiles.size === 0}
-              >
-                <FiUpload className="mr-2" />
-                Upload {selectedFiles.size} {selectedFiles.size === 1 ? 'File' : 'Files'} to Arweave
-              </button>
-            )}
           </div>
 
-          {/* Authentication Error UI */}
-          {authError && (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <img 
-                src="https://www.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png" 
-                alt="Google Drive" 
-                className="w-16 h-16 mb-6"
-              />
-              <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4 text-center">
-                Unable to access your Google Drive files
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-8 text-center max-w-md">
-                Your Google Drive session may have expired or you might need to reconnect your account.
-              </p>
-              
-              <button
-                onClick={handleGoogleSignIn}
-                className="flex items-center justify-center px-6 py-3 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
-              >
-                <svg viewBox="0 0 24 24" width="24" height="24" className="mr-3">
-                  <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
-                    <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
-                    <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
-                    <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z" />
-                    <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
-                  </g>
-                </svg>
-                Sign in with Google
-              </button>
-              
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                Back to Dashboard
-              </button>
-            </div>
-          )}
-
-          {/* Loading State */}
-          {isLoading && !authError && (
-            <div className="flex justify-center my-12">
-              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
-
-          {/* Files Grid - Only show when not in auth error state */}
-          {!isLoading && !authError && sortedFiles.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {sortedFiles.map((file) => (
-                <motion.div
-                  key={file.id}
-                  whileHover={{ scale: 1.03 }}
-                  className={`bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative ${
-                    selectedFiles.has(file.id) ? 'ring-2 ring-blue-500' : ''
-                  }`}
+          {/* Add padding to the content when controls are fixed */}
+          <div className={showFloatingToolbar ? 'pt-32' : ''}>
+            {/* Authentication Error UI */}
+            {authError && (
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <img 
+                  src="https://www.gstatic.com/images/branding/product/2x/drive_2020q4_48dp.png" 
+                  alt="Google Drive" 
+                  className="w-16 h-16 mb-6"
+                />
+                <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4 text-center">
+                  Unable to access your Google Drive files
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-8 text-center max-w-md">
+                  Your Google Drive session may have expired or you might need to reconnect your account.
+                </p>
+                
+                <button
+                  onClick={handleGoogleSignIn}
+                  className="flex items-center justify-center px-6 py-3 bg-white text-gray-800 border border-gray-300 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
                 >
-                  {/* Selection Checkbox - Only visible in selection mode */}
-                  {selectionMode && (
-                    <div 
-                      className="absolute top-2 left-2 z-20 bg-white dark:bg-gray-800 rounded-full w-6 h-6 flex items-center justify-center border border-gray-300 dark:border-gray-600 shadow-md"
-                      onClick={(e) => toggleFileSelection(file.id, e)}
-                    >
-                      {selectedFiles.has(file.id) ? (
-                        <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : null}
-                    </div>
-                  )}
-                  
-                  {/* Upload Indicator - Show when file is being uploaded */}
-                  {uploadingFiles.has(file.id) && (
-                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
-                      <div className="text-white text-center p-4">
-                        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                        <p className="text-sm">Uploading...</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Three dots menu */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFileDetails(selectedFileDetails === file.id ? null : file.id);
-                    }}
-                    className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white file-menu-button"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                    </svg>
-                  </button>
+                  <svg viewBox="0 0 24 24" width="24" height="24" className="mr-3">
+                    <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
+                      <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
+                      <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
+                      <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z" />
+                      <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
+                    </g>
+                  </svg>
+                  Sign in with Google
+                </button>
+                
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Back to Dashboard
+                </button>
+              </div>
+            )}
 
-                  {/* File card onClick handler - Update to handle selection mode */}
-                  <div 
-                    className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-                    onClick={(e) => {
-                      if (selectionMode) {
-                        toggleFileSelection(file.id, e);
-                      } else {
-                        // Existing onClick behavior for normal mode
-                        if (file.mimeType === 'application/vnd.google-apps.folder') {
-                          navigateToFolder(file.id, file.name);
-                        } else if (file.mimeType.includes('image/') || file.mimeType === 'application/pdf') {
-                          setPreviewModal(file.id);
-                        } else if (file.mimeType.includes('google-apps')) {
-                          window.open(file.webViewLink, '_blank');
-                        } else if (file.mimeType.includes('audio/') || file.mimeType.includes('video/')) {
-                          setPreviewModal(file.id);
-                        } else {
-                          setPreviewModal(file.id);
-                        }
-                      }
-                    }}
+            {/* Loading State */}
+            {isLoading && !authError && (
+              <div className="flex justify-center my-12">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+
+            {/* Enhanced Files Grid */}
+            {!isLoading && !authError && sortedFiles.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                {sortedFiles.map((file) => (
+                  <motion.div
+                    key={file.id}
+                    whileHover={{ scale: 1.02 }}
+                    className={`bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer relative group ${
+                      selectedFiles.has(file.id) ? 'ring-2 ring-blue-500' : ''
+                    }`}
                   >
-                    {/* Improved thumbnail display with better fallbacks */}
-                    {file.mimeType.includes('image/') ? (
-                      file.thumbnailLink ? (
+                    {/* Selection Checkbox - Enhanced with better visibility */}
+                    {selectionMode && (
+                      <div 
+                        className={`absolute top-2 left-2 z-20 rounded-full w-6 h-6 flex items-center justify-center transition-all duration-200 ${
+                          selectedFiles.has(file.id) 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 group-hover:border-blue-500'
+                        }`}
+                        onClick={(e) => toggleFileSelection(file.id, e)}
+                      >
+                        {selectedFiles.has(file.id) && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Upload Indicator - Enhanced with better visibility */}
+                    {uploadingFiles.has(file.id) && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+                        <div className="text-white text-center p-4">
+                          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                          <p className="text-sm font-medium">Uploading...</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Enhanced File Preview */}
+                    <div 
+                      className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+                      onClick={(e) => {
+                        if (selectionMode) {
+                          toggleFileSelection(file.id, e);
+                        } else {
+                          if (file.mimeType === 'application/vnd.google-apps.folder') {
+                            navigateToFolder(file.id, file.name);
+                          } else if (file.mimeType.includes('image/') || file.mimeType === 'application/pdf') {
+                            setPreviewModal(file.id);
+                          } else if (file.mimeType.includes('google-apps')) {
+                            window.open(file.webViewLink, '_blank');
+                          } else {
+                            setPreviewModal(file.id);
+                          }
+                        }
+                      }}
+                    >
+                      {/* Improved thumbnail display */}
+                      {file.mimeType.includes('image/') ? (
+                        file.thumbnailLink ? (
+                          <img 
+                            src={file.thumbnailLink}
+                            alt={file.name} 
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                              const target = e.currentTarget;
+                              target.onerror = null;
+                              target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(file.name)}&background=random&size=200`;
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+                            <FiImage size={36} className="text-blue-500" />
+                          </div>
+                        )
+                      ) : file.thumbnailLink ? (
                         <img 
                           src={file.thumbnailLink}
                           alt={file.name} 
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
                           onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                             const target = e.currentTarget;
                             target.onerror = null;
@@ -1264,136 +1309,136 @@ const GoogleDrive = () => {
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                          <FiImage size={36} className="text-blue-500" />
+                        <div className="flex flex-col items-center justify-center">
+                          {getFileIcon(file.mimeType)}
+                          <span className="text-xs mt-2 uppercase text-gray-500 dark:text-gray-400">
+                            {file.mimeType === 'application/vnd.google-apps.folder' 
+                              ? 'Folder' 
+                              : file.name.split('.').pop() || 'File'}
+                          </span>
                         </div>
-                      )
-                    ) : file.thumbnailLink ? (
-                      <img 
-                        src={file.thumbnailLink}
-                        alt={file.name} 
-                        className="w-full h-full object-contain"
-                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                          const target = e.currentTarget;
-                          target.onerror = null;
-                          target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(file.name)}&background=random&size=200`;
-                        }}
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center">
-                        {getFileIcon(file.mimeType)}
-                        <span className="text-xs mt-2 uppercase text-gray-500 dark:text-gray-400">
-                          {file.mimeType === 'application/vnd.google-apps.folder' 
-                            ? 'Folder' 
-                            : file.name.split('.').pop() || 'File'}
+                      )}
+                    </div>
+                    
+                    {/* Enhanced File Info */}
+                    <div className="p-4">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={file.name}>
+                        {file.name}
+                      </p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {file.size || ''}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDate(file.modifiedTime)}
                         </span>
                       </div>
-                    )}
-                  </div>
-                  
-                  {/* File Info */}
-                  <div className="p-3">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={file.name}>
-                      {file.name}
-                    </p>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {file.size || ''}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatDate(file.modifiedTime)}
-                      </span>
                     </div>
-                  </div>
 
-                  {/* File Details Dropdown Menu */}
-                  {selectedFileDetails === file.id && (
-                    <div className="absolute top-2 right-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700 file-menu-dropdown">
-                      <div className="py-1">
-                        {file.mimeType === 'application/vnd.google-apps.folder' ? (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigateToFolder(file.id, file.name);
-                              setSelectedFileDetails(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                          >
-                            <FiFolder className="w-4 h-4 mr-2" />
-                            Open Folder
-                          </button>
-                        ) : (
-                          <>
-                            {file.mimeType.includes('image/') && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedFileDetails(null);
-                                  setPreviewModal(file.id);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                              >
-                                <FiExternalLink className="w-4 h-4 mr-2" />
-                                Preview
-                              </button>
-                            )}
-                            
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(`https://drive.google.com/uc?export=download&id=${file.id}`, '_blank');
-                                setSelectedFileDetails(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                            >
-                              <FiDownload className="w-4 h-4 mr-2" />
-                              Download
-                            </button>
-                            
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(`https://drive.google.com/file/d/${file.id}/view`, '_blank');
-                                setSelectedFileDetails(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                            >
-                              <FiExternalLink className="w-4 h-4 mr-2" />
-                              Open in Drive
-                            </button>
-                            
-                            <button 
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                // Convert the file into a temp array for the upload function
-                                setSelectedFiles(new Set([file.id]));
-                                uploadSelectedToArweave(); // This will now show confirmation first
-                                setSelectedFileDetails(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                            >
-                              <FiUpload className="w-4 h-4 mr-2" />
-                              Upload to Arweave
-                            </button>
-                          </>
+                    {/* Enhanced File Actions Menu */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className="relative">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFileDetails(selectedFileDetails === file.id ? null : file.id);
+                          }}
+                          className="p-2 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white transition-colors duration-200"
+                          title="File Actions"
+                        >
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                          </svg>
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {selectedFileDetails === file.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                            <div className="py-1">
+                              {file.mimeType === 'application/vnd.google-apps.folder' ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigateToFolder(file.id, file.name);
+                                    setSelectedFileDetails(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                                >
+                                  <FiFolder className="mr-2" />
+                                  Open Folder
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(file.webViewLink, '_blank');
+                                      setSelectedFileDetails(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                                  >
+                                    <FiExternalLink className="mr-2" />
+                                    Open in Drive
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      window.open(`https://drive.google.com/uc?export=download&id=${file.id}`, '_blank');
+                                      setSelectedFileDetails(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                                  >
+                                    <FiDownload className="mr-2" />
+                                    Download
+                                  </button>
+                                </>
+                              )}
+                              {selectionMode && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleFileSelection(file.id, e);
+                                    setSelectedFileDetails(null);
+                                  }}
+                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                                >
+                                  {selectedFiles.has(file.id) ? (
+                                    <>
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                      Deselect
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                      Select
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          ) : (!isLoading && !authError && (
-            <div className="flex flex-col items-center justify-center py-16">
-              <FiFolder size={64} className="text-gray-400 dark:text-gray-600 mb-4" />
-              <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">
-                {searchQuery ? 'No files found' : 'This folder is empty'}
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mt-2">
-                {searchQuery ? 'Try a different search term' : 'Your Google Drive folder is empty'}
-              </p>
-            </div>
-          ))}
+                  </motion.div>
+                ))}
+              </div>
+            ) : (!isLoading && !authError && (
+              <div className="flex flex-col items-center justify-center py-16">
+                <FiFolder size={64} className="text-gray-400 dark:text-gray-600 mb-4" />
+                <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">
+                  {searchQuery ? 'No files found' : 'This folder is empty'}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">
+                  {searchQuery ? 'Try a different search term' : 'Your Google Drive folder is empty'}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -1617,30 +1662,6 @@ const GoogleDrive = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Selection Mode Toolbar */}
-      {selectionMode && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-md p-4 flex items-center justify-between z-50">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={clearSelection}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-            >
-              Clear Selection
-            </button>
-            <span className="text-gray-700 dark:text-gray-300">
-              {selectedFiles.size} file{selectedFiles.size !== 1 ? 's' : ''} selected
-            </span>
-          </div>
-          <button 
-            onClick={uploadSelectedToArweave}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
-          >
-            <FiUpload className="mr-2" />
-            Upload to Arweave
-          </button>
-        </div>
-      )}
 
       {/* Upload Confirmation Modal */}
       {showUploadConfirmation && (
