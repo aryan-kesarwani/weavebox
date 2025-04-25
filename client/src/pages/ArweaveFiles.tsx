@@ -10,6 +10,20 @@ import API from '../globals/axiosConfig';
 import { getStoredFiles, storeFile, StoredFile } from '../utils/fileStorage';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import { useArweaveTransactions } from '../hooks/useArweaveTransactions';
+
+interface Transaction {
+  id: string;
+  tags: Array<{
+    name: string;
+    value: string;
+  }>;
+}
+
+interface Tag {
+  name: string;
+  value: string;
+}
 
 const Uploads = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -24,13 +38,14 @@ const Uploads = () => {
   const [priceEstimate, setPriceEstimate] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedFileDetails, setSelectedFileDetails] = useState<number | null>(null);
-  const [fileDetailModal, setFileDetailModal] = useState<number | null>(null);
-  const [previewModal, setPreviewModal] = useState<number | null>(null);
+  const [selectedFileDetails, setSelectedFileDetails] = useState<string | null>(null);
+  const [fileDetailModal, setFileDetailModal] = useState<string | null>(null);
+  const [previewModal, setPreviewModal] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const { transactions, loading, error, loadMore, hasMore } = useArweaveTransactions();
 
   const [uploadedFiles, setUploadedFiles] = useState<StoredFile[]>([]);
 
@@ -41,6 +56,12 @@ const Uploads = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -105,6 +126,20 @@ const Uploads = () => {
       });
     };
   }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 100
+      ) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMore]);
 
   const handleDisconnectWallet = () => {
     handleDisconnect();
@@ -222,26 +257,36 @@ const Uploads = () => {
     client.requestAccessToken();
   };
 
-  const filteredFiles = uploadedFiles.filter(file => {
-    const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = fileTypeFilter === 'all' || file.type === fileTypeFilter;
+  const getFileType = (tags: Tag[]) => {
+    const contentType = tags.find(tag => tag.name === 'Content-Type')?.value || '';
+    if (contentType.includes('image')) return 'image';
+    if (contentType.includes('video')) return 'video';
+    if (contentType.includes('audio')) return 'audio';
+    if (contentType.includes('pdf') || contentType.includes('document')) return 'document';
+    return 'file';
+  };
+
+  const filteredTransactions = transactions.filter(tx => {
+    const matchesSearch = tx.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = fileTypeFilter === 'all' || 
+      tx.tags.some(tag => tag.name === 'Content-Type' && tag.value.includes(fileTypeFilter));
     return matchesSearch && matchesType;
   });
 
-  const sortedFiles = [...filteredFiles].sort((a, b) => {
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     switch (sortOption) {
       case 'name-asc':
-        return a.name.localeCompare(b.name);
+        return a.id.localeCompare(b.id);
       case 'name-desc':
-        return b.name.localeCompare(a.name);
-      case 'date-asc':
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
+        return b.id.localeCompare(a.id);
       case 'date-desc':
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      case 'size-asc':
-        return a.sizeInBytes - b.sizeInBytes;
+        return 0; // Since we don't have date info in transactions
+      case 'date-asc':
+        return 0; // Since we don't have date info in transactions
       case 'size-desc':
-        return b.sizeInBytes - a.sizeInBytes;
+        return 0; // Since we don't have size info in transactions
+      case 'size-asc':
+        return 0; // Since we don't have size info in transactions
       default:
         return 0;
     }
@@ -292,14 +337,12 @@ const Uploads = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       <ToastContainer theme={darkMode ? 'dark' : 'light'} />
       
-      {/* Use the Navbar component */}
       <Navbar 
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         currentPage="uploads"
       />
 
-      {/* Sidebar */}
       <Sidebar isSidebarOpen={isSidebarOpen} currentPage="uploads" />
 
       <div className={`pt-16 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'ml-[250px]' : 'ml-0'}`}>
@@ -400,165 +443,134 @@ const Uploads = () => {
               )}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
-              {sortedFiles.length} {sortedFiles.length === 1 ? 'file' : 'files'}
+              {sortedTransactions.length} {sortedTransactions.length === 1 ? 'transaction' : 'transactions'}
             </div>
           </div>
-          {sortedFiles.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {sortedFiles.map((file) => (
-                <motion.div
-                  key={file.id}
-                  whileHover={{ scale: 1.03 }}
-                  className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative"
-                >
-                  {/* Three dots menu */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFileDetails(file.id !== undefined && selectedFileDetails === file.id ? null : file.id || null);
-                    }}
-                    className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white file-menu-button"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                    </svg>
-                  </button>
+          {sortedTransactions.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {sortedTransactions.map((tx) => {
+                  const fileType = getFileType(tx.tags);
+                  return (
+                    <motion.div
+                      key={tx.id}
+                      whileHover={{ scale: 1.03 }}
+                      className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative"
+                    >
+                      {/* Three dots menu */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFileDetails(tx.id !== selectedFileDetails ? tx.id : null);
+                        }}
+                        className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white file-menu-button"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                        </svg>
+                      </button>
 
-                  {/* File card onClick handler - opens preview */}
-                  <div 
-                    className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-                    onClick={() => setPreviewModal(file.id ?? null)}
-                  >
-                    {file.type === 'image' ? (
-                      <img 
-                        src={file.url || `https://source.unsplash.com/random/300x300?${file.name.split('.')[0]}`} 
-                        alt={file.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center">
-                        {getFileIcon(file.type)}
-                        <span className="text-xs mt-2 uppercase text-gray-500 dark:text-gray-400">
-                          {file.name.split('.').pop()}
-                        </span>
+                      {/* File card onClick handler - opens preview */}
+                      <div 
+                        className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+                        onClick={() => setPreviewModal(tx.id)}
+                      >
+                        {fileType === 'image' ? (
+                          <img 
+                            src={`https://arnode.asia/${tx.id}`}
+                            alt={tx.id}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center">
+                            {getFileIcon(fileType)}
+                            <span className="text-xs mt-2 uppercase text-gray-500 dark:text-gray-400">
+                              {fileType}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  
-                  {/* File Info section */}
-                  <div className="p-3">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={file.name}>
-                      {file.name}
-                    </p>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {file.size}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {file.date}
-                      </span>
-                    </div>
-                  </div>
+                      
+                      {/* File Info section */}
+                      <div className="p-3">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={tx.id}>
+                          {tx.id}
+                        </p>
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {fileType}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* File Details Dropdown Menu */}
-                  {selectedFileDetails === file.id && (
-                    <div className="absolute top-2 right-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700 file-menu-dropdown">
-                      <div className="py-1">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedFileDetails(null);
-                            setFileDetailModal(file.id ?? null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          View Details
-                        </button>
-                        
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (file.txHash === 'pending') {
-                              toast.info("File is still being uploaded to Arweave. Please wait.", {
-                                position: "bottom-right",
-                                autoClose: 3000,
-                                hideProgressBar: true,
-                              });
-                              return;
-                            }
-                            const link = document.createElement('a');
-                            link.href = file.url || `https://arweave.net/${file.txHash}`;
-                            link.download = file.name;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            setSelectedFileDetails(null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <FiDownload className="w-4 h-4 mr-2" />
-                          {file.txHash === 'pending' ? 'Uploading...' : 'Download'}
-                        </button>
-                        
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (file.txHash === 'pending') {
-                              toast.info("File is still being uploaded to Arweave. Please wait.", {
-                                position: "bottom-right",
-                                autoClose: 3000,
-                                hideProgressBar: true,
-                              });
-                              return;
-                            }
-                            navigator.clipboard.writeText(`https://arweave.net/${file.txHash}`);
-                            toast.info("Copied to clipboard", {
-                              position: "bottom-right",
-                              autoClose: 3000,
-                              hideProgressBar: true,
-                            });
-                            setSelectedFileDetails(null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <FiCopy className="w-4 h-4 mr-2" />
-                          {file.txHash === 'pending' ? 'Uploading...' : 'Copy Transaction ID'}
-                        </button>
-                        
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (file.txHash === 'pending') {
-                              toast.info("File is still being uploaded to Arweave. Please wait.", {
-                                position: "bottom-right",
-                                autoClose: 3000,
-                                hideProgressBar: true,
-                              });
-                              return;
-                            }
-                            window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank');
-                            setSelectedFileDetails(null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <FiExternalLink className="w-4 h-4 mr-2" />
-                          {file.txHash === 'pending' ? 'Uploading...' : 'View Transaction'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
+                      {/* File Details Dropdown Menu */}
+                      {selectedFileDetails === tx.id && (
+                        <div className="absolute top-2 right-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700 file-menu-dropdown">
+                          <div className="py-1">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFileDetails(null);
+                                setFileDetailModal(tx.id);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                            >
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              View Details
+                            </button>
+                            
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`https://arnode.asia/${tx.id}`, '_blank');
+                                setSelectedFileDetails(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                            >
+                              <FiExternalLink className="w-4 h-4 mr-2" />
+                              View on Arweave
+                            </button>
+                            
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`https://arnode.asia/${tx.id}`);
+                                toast.success('URL copied to clipboard');
+                                setSelectedFileDetails(null);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                            >
+                              <FiCopy className="w-4 h-4 mr-2" />
+                              Copy URL
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+              
+              {loading && (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              )}
+              
+              {!hasMore && !loading && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  No more transactions to load
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center py-16">
               <FiFolder size={64} className="text-gray-400 dark:text-gray-600 mb-4" />
-              <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">No files found</h3>
+              <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">No transactions found</h3>
               <p className="text-gray-500 dark:text-gray-400 mt-2">
-                {searchQuery || fileTypeFilter !== 'all' ? 'Try different search criteria' : 'Upload some files to get started'}
+                {searchQuery || fileTypeFilter !== 'all' ? 'Try different search criteria' : 'No transactions available'}
               </p>
               {(searchQuery || fileTypeFilter !== 'all') && (
                 <div className="flex space-x-3 mt-4">
@@ -584,7 +596,8 @@ const Uploads = () => {
           )}
         </div>
       </div>
-      {fileDetailModal !== null && (
+
+      {fileDetailModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full p-6 relative">
             <button 
@@ -594,56 +607,38 @@ const Uploads = () => {
               <FiX size={24} />
             </button>
             
-            {uploadedFiles.map(file => file.id === fileDetailModal && (
-              <div key={file.id}>
+            {transactions.map(tx => tx.id === fileDetailModal && (
+              <div key={tx.id}>
                 <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
-                  {file.name}
+                  {tx.id}
                 </h2>
                 
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">File Name</p>
-                        <p className="font-medium text-gray-900 dark:text-white break-all">{file.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Transaction ID</p>
+                        <p className="font-medium text-gray-900 dark:text-white break-all">{tx.id}</p>
                       </div>
                       
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Uploaded On</p>
-                        <p className="font-medium text-gray-900 dark:text-white">{file.date} at {file.time}</p>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Size</p>
-                        <p className="font-medium text-gray-900 dark:text-white">{file.size} ({(file.sizeInBytes / 1024 / 1024).toFixed(2)} MB)</p>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Type</p>
-                        <p className="font-medium text-gray-900 dark:text-white">{file.contentType || file.type}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Content Type</p>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {tx.tags.find(tag => tag.name === 'Content-Type')?.value || 'Unknown'}
+                        </p>
                       </div>
                     </div>
                     
                     <div className="space-y-3">
                       <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Transaction Hash</p>
-                        <p className="font-medium text-blue-600 dark:text-blue-400 break-all">
-                          {file.txHash}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Storage Status</p>
-                        <p className="font-medium text-green-600 dark:text-green-400">
-                          {file.permanentlyStored ? 'Permanently Stored' : 'Processing'}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Uploaded By</p>
-                        <p className="font-medium text-gray-900 dark:text-white break-all">
-                          {file.uploadedBy}
-                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Tags</p>
+                        <div className="space-y-1">
+                          {tx.tags.map((tag: Tag, index: number) => (
+                            <p key={index} className="font-medium text-blue-600 dark:text-blue-400 break-all">
+                              {tag.name}: {tag.value}
+                            </p>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -652,68 +647,21 @@ const Uploads = () => {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Actions</p>
                     <div className="flex flex-wrap gap-2">
                       <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (file.txHash === 'pending') {
-                            toast.info("File is still being uploaded to Arweave. Please wait.", {
-                              position: "bottom-right",
-                              autoClose: 3000,
-                              hideProgressBar: true,
-                            });
-                            return;
-                          }
-                          const link = document.createElement('a');
-                          link.href = file.url || `https://arnode.asia/${file.txHash}`;
-                          link.download = file.name;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
+                        onClick={() => window.open(`https://arnode.asia/${tx.id}`, '_blank')}
                         className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center"
                       >
-                        <FiDownload className="w-4 h-4 mr-2" />
-                        Download
+                        <FiExternalLink className="w-4 h-4 mr-2" />
+                        View on Arweave
                       </button>
                       <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (file.txHash === 'pending') {
-                            toast.info("File is still being uploaded to Arweave. Please wait.", {
-                              position: "bottom-right",
-                              autoClose: 3000,
-                              hideProgressBar: true,
-                            });
-                            return;
-                          }
-                          navigator.clipboard.writeText(`https://arnode.asia/${file.txHash}`);
-                          toast.info("Copied to clipboard", {
-                            position: "bottom-right",
-                            autoClose: 3000,
-                            hideProgressBar: true,
-                          });
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://arnode.asia/${tx.id}`);
+                          toast.success('URL copied to clipboard');
                         }}
                         className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
                       >
                         <FiCopy className="w-4 h-4 mr-2" />
                         Copy URL
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (file.txHash === 'pending') {
-                            toast.info("File is still being uploaded to Arweave. Please wait.", {
-                              position: "bottom-right",
-                              autoClose: 3000,
-                              hideProgressBar: true,
-                            });
-                            return;
-                          }
-                          window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank');
-                        }}
-                        className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
-                      >
-                        <FiExternalLink className="w-4 h-4 mr-2" />
-                        View Transaction
                       </button>
                     </div>
                   </div>
@@ -723,10 +671,9 @@ const Uploads = () => {
           </div>
         </div>
       )}
-      
-      {/* Add File Preview Modal - Google Drive Style */}
+
       <AnimatePresence>
-        {previewModal !== null && (
+        {previewModal && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -741,31 +688,18 @@ const Uploads = () => {
               className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl w-4/5 h-4/5 max-w-5xl relative overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header with file name and close button */}
               <div className="absolute top-0 left-0 right-0 bg-white dark:bg-gray-800 p-4 flex items-center justify-between shadow-md z-10">
-                {uploadedFiles.map(file => file.id === previewModal && (
-                  <h3 key={file.id} className="font-medium text-gray-900 dark:text-white truncate">
-                    {file.name}
-                  </h3>
-                ))}
+                <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                  {previewModal}
+                </h3>
                 <div className="flex items-center space-x-2">
-                  {uploadedFiles.map(file => file.id === previewModal && (
-                    <button 
-                      key={`download-${file.id}`}
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = file.url || `https://arweave.net/${file.txHash}`;
-                        link.download = file.name;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                      title="Download"
-                    >
-                      <FiDownload className="text-gray-600 dark:text-gray-300" size={20} />
-                    </button>
-                  ))}
+                  <button 
+                    onClick={() => window.open(`https://arnode.asia/${previewModal}`, '_blank')}
+                    className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    title="View"
+                  >
+                    <FiExternalLink className="text-gray-600 dark:text-gray-300" size={20} />
+                  </button>
                   <button 
                     onClick={() => setPreviewModal(null)}
                     className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -776,63 +710,25 @@ const Uploads = () => {
                 </div>
               </div>
 
-              {/* File Preview Content */}
               <div className="absolute inset-0 pt-16 pb-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-                {uploadedFiles.map(file => {
-                  if (file.id !== previewModal) return null;
-                  
-                  // Image Preview
-                  if (file.type === 'image' && file.url) {
-                    return (
-                      <div key={file.id} className="h-full w-full flex items-center justify-center p-4">
-                        <img 
-                          src={file.url} 
-                          alt={file.name} 
-                          className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-                        />
-                      </div>
-                    );
-                  }
-                  
-                  // Non-image files - just show icon and name
-                  return (
-                    <div key={file.id} className="text-center">
-                      <div className="mb-4 p-6 bg-white dark:bg-gray-700 rounded-full inline-flex">
-                        {file.type === 'video' ? (
-                          <FiVideo size={64} className="text-purple-500" />
-                        ) : file.type === 'audio' ? (
-                          <FiMusic size={64} className="text-pink-500" />
-                        ) : file.type === 'document' ? (
-                          <FiFile size={64} className="text-blue-500" />
-                        ) : file.type === 'archive' ? (
-                          <FiFolder size={64} className="text-green-500" />
-                        ) : (
-                          <FiFile size={64} className="text-gray-500" />
-                        )}
-                      </div>
-                      <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
-                        {file.name}
-                      </h3>
-                      <p className="text-gray-500 dark:text-gray-400">
-                        {file.contentType || file.type} • {file.size}
-                      </p>
-                      <button 
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = file.url || `https://arweave.net/${file.txHash}`;
-                          link.download = file.name;
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}
-                        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center mx-auto"
-                      >
-                        <FiDownload className="mr-2" />
-                        Download
-                      </button>
-                    </div>
-                  );
-                })}
+                <div className="text-center">
+                  <div className="mb-4 p-6 bg-white dark:bg-gray-700 rounded-full inline-flex">
+                    {getFileIcon(getFileType(transactions.find(tx => tx.id === previewModal)?.tags || []))}
+                  </div>
+                  <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+                    {previewModal}
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {getFileType(transactions.find(tx => tx.id === previewModal)?.tags || [])}
+                  </p>
+                  <button 
+                    onClick={() => window.open(`https://arnode.asia/${previewModal}`, '_blank')}
+                    className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center mx-auto"
+                  >
+                    <FiExternalLink className="mr-2" />
+                    View on Arweave
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
