@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 
 const darkModeSlice = createSlice({
   name: 'darkMode',
-  initialState: true,
+  initialState: false,
   reducers: {
     setDarkMode: (state, action: PayloadAction<boolean>) => {
       return action.payload;

@@ -20,6 +20,12 @@ export const uploadArweave = async () => {
   const walletAddress = await window.arweaveWallet.getActiveAddress();
 
   for (const file of files) {
+    // Skip if file has a non-empty transaction ID that isn't 'pending'
+    if (file.txHash && file.txHash !== 'pending') {
+      console.log(`Skipping ${file.name} - already uploaded with TX ID: ${file.txHash}`);
+      continue;
+    }
+
     const { name: fileName, data, sizeInBytes: fileSize, contentType } = file;
     const fileExtension = fileName.split('.').pop() || '';
     const baseName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
@@ -54,7 +60,6 @@ export const uploadArweave = async () => {
             { name: 'Content-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' },
             { name: 'File-Extension', value: fileExtension },
             { name: 'File-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' }
-            
           ]
         }
       } as any);

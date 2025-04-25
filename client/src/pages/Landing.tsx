@@ -10,7 +10,7 @@ import { useDispatch } from 'react-redux'
 // Self-contained component with no external dependencies beyond React
 const WeaveBoxLanding: React.FC = () => {
   // State management
-  const [darkMode, setDarkMode] = useState<boolean>(false)
+  const [darkMode, setDarkMode] = useState<boolean>(true)
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false)
   const [isConnecting, setIsConnecting] = useState<boolean>(false)
   const [showSignInModal, setShowSignInModal] = useState<boolean>(false)
@@ -28,18 +28,12 @@ const WeaveBoxLanding: React.FC = () => {
   // Canvas ref for particle animation
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Initialize dark mode based on user preference
-  useEffect(() => {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    setDarkMode(prefersDark)
-  }, [])
-
   // Apply dark mode class to document
   useEffect(() => {
     if (darkMode) {
-      document.documentElement.classList.add("dark")
-    } else {
       document.documentElement.classList.remove("dark")
+    } else {
+      document.documentElement.classList.add("dark")
     }
   }, [darkMode])
 

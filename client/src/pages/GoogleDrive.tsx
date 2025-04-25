@@ -16,6 +16,7 @@ import UploadConfirmationModal from '../components/UploadConfirmationModal';
 import UploadProgressBar from '../components/UploadProgressBar';
 import { getTxns } from '../contracts/getTxns';
 import TransactionSidebar from '../components/TransactionSidebar';
+import path from 'path';
 
 interface GoogleDriveFile {
   id: string;
@@ -25,6 +26,18 @@ interface GoogleDriveFile {
   webViewLink?: string;
   size?: string;
   modifiedTime?: string;
+  buffer?: Buffer;
+}
+
+// Add type definitions for electron IPC
+declare global {
+  interface Window {
+    electron: {
+      ipcRenderer: {
+        invoke(channel: string, ...args: any[]): Promise<any>;
+      };
+    };
+  }
 }
 
 const GoogleDrive = () => {
@@ -53,6 +66,7 @@ const GoogleDrive = () => {
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedFilesMetadata, setSelectedFilesMetadata] = useState<GoogleDriveFile[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
 
   const [showUploadConfirmation, setShowUploadConfirmation] = useState(false);
@@ -618,24 +632,72 @@ const GoogleDrive = () => {
     if (selectionMode) {
       // Clear selected files when exiting selection mode
       setSelectedFiles(new Set());
+      setSelectedFilesMetadata([]);
     }
     setSelectionMode(!selectionMode);
   };
 
-  const toggleFileSelection = (fileId: string, e: React.MouseEvent) => {
+  const toggleFileSelection = async (fileId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent opening the file when selecting
     
+    const file = files.find(f => f.id === fileId);
+    if (!file) return;
+
     const newSelection = new Set(selectedFiles);
-    if (newSelection.has(fileId)) {
-      newSelection.delete(fileId);
+    const newMetadata = [...selectedFilesMetadata];
+    
+    // If it's a folder, recursively select/deselect all files within it
+    if (file.mimeType === 'application/vnd.google-apps.folder') {
+      try {
+        // Get all files in the folder
+        const folderFiles = await accessDriveFiles(googleToken || '', fileId);
+        
+        // If folder is being selected, add all its files
+        if (!newSelection.has(fileId)) {
+          newSelection.add(fileId);
+          folderFiles.forEach(f => {
+            if (f.mimeType !== 'application/vnd.google-apps.folder') {
+              newSelection.add(f.id);
+              newMetadata.push(f);
+            }
+          });
+        } else {
+          // If folder is being deselected, remove all its files
+          newSelection.delete(fileId);
+          folderFiles.forEach(f => {
+            newSelection.delete(f.id);
+            const index = newMetadata.findIndex(m => m.id === f.id);
+            if (index !== -1) {
+              newMetadata.splice(index, 1);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error accessing folder contents:', error);
+        toast.error('Failed to access folder contents');
+        return;
+      }
     } else {
-      newSelection.add(fileId);
+      // For regular files, just toggle the selection
+      if (newSelection.has(fileId)) {
+        newSelection.delete(fileId);
+        const index = newMetadata.findIndex(m => m.id === fileId);
+        if (index !== -1) {
+          newMetadata.splice(index, 1);
+        }
+      } else {
+        newSelection.add(fileId);
+        newMetadata.push(file);
+      }
     }
+    
     setSelectedFiles(newSelection);
+    setSelectedFilesMetadata(newMetadata);
   };
 
   const clearSelection = () => {
     setSelectedFiles(new Set());
+    setSelectedFilesMetadata([]);
   };
 
   const uploadSelectedToArweave = async () => {
@@ -643,11 +705,130 @@ const GoogleDrive = () => {
     setShowUploadConfirmation(true);
   };
 
+  const handleCompressImages = async () => {
+    try {
+      console.log('Starting image compression process...');
+      
+      // Filter only selected image files
+      const imageFiles = selectedFilesMetadata.filter(file => 
+        (file.mimeType?.startsWith('image/') ||
+        file.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) &&
+        selectedFiles.has(file.id)
+      );
+
+      console.log('Selected image files:', imageFiles);
+
+      if (imageFiles.length === 0) {
+        console.log('No images selected for compression');
+        toast.info("No images selected to compress", {
+          position: "bottom-right",
+          autoClose: 3000,
+          hideProgressBar: true,
+        });
+        return;
+      }
+
+      // Create temporary directory
+      console.log('Creating temporary directory...');
+      const tempDir = await window.electron.ipcRenderer.invoke('create-temp-dir');
+      console.log('Temporary directory created:', tempDir);
+      
+      // Process each selected image
+      for (const file of imageFiles) {
+        try {
+          console.log(`Processing file: ${file.name}`);
+          const inputPath = path.join(tempDir, file.name);
+          const outputPath = path.join(tempDir, `compressed_${file.name}`);
+          
+          console.log('Input path:', inputPath);
+          console.log('Output path:', outputPath);
+          
+          // Write the file to temp directory
+          console.log('Writing file to temp directory...');
+          await window.electron.ipcRenderer.invoke('write-file', inputPath, file.buffer);
+          console.log('File written successfully');
+          
+          // Compress the image
+          console.log('Calling compress-image IPC...');
+          const result = await window.electron.ipcRenderer.invoke('compress-image', inputPath, outputPath);
+          console.log('Compression result:', result);
+          
+          if (result.success) {
+            console.log('Compression successful, reading compressed file...');
+            // Read the compressed file
+            const compressedBuffer = await window.electron.ipcRenderer.invoke('read-file', outputPath);
+            console.log('Compressed file read successfully, size:', compressedBuffer.length);
+            
+            // Create a File object from the compressed buffer
+            const compressedFile = new File([compressedBuffer], file.name, {
+              type: file.mimeType,
+              lastModified: file.modifiedTime ? new Date(file.modifiedTime).getTime() : Date.now()
+            });
+
+            console.log('Storing compressed file in IndexedDB...');
+            // Store the compressed file in IndexedDB
+            const storedFile = await storeFile(compressedFile, userAddress || 'anonymous');
+            
+            if (storedFile && storedFile.id) {
+              console.log('File stored in IndexedDB successfully');
+              // Update the file in selectedFilesMetadata
+              const updatedFile = {
+                ...file,
+                buffer: compressedBuffer,
+                size: compressedBuffer.length,
+                txHash: 'pending' // Mark as pending since it's a new compressed version
+              };
+              
+              setSelectedFilesMetadata(prev => 
+                prev.map(f => f.id === file.id ? updatedFile : f)
+              );
+
+              toast.success(`Compressed and stored ${file.name}`, {
+                position: "bottom-right",
+                autoClose: 3000,
+                hideProgressBar: true,
+              });
+            } else {
+              console.error('Failed to store file in IndexedDB');
+              throw new Error('Failed to store compressed file in IndexedDB');
+            }
+          } else {
+            console.error('Compression failed:', result.error);
+            throw new Error(result.error);
+          }
+        } catch (error) {
+          console.error(`Error compressing ${file.name}:`, error);
+          toast.error(`Failed to compress ${file.name}`, {
+            position: "bottom-right",
+            autoClose: 3000,
+            hideProgressBar: true,
+          });
+        }
+      }
+
+      console.log('Image compression process completed');
+      toast.success("Image compression completed", {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: true,
+      });
+    } catch (error) {
+      console.error('Error in image compression:', error);
+      toast.error("Failed to compress images", {
+        position: "bottom-right",
+        autoClose: 3000,
+        hideProgressBar: true,
+      });
+    }
+  };
+
   const handleConfirmUpload = async () => {
     setShowUploadConfirmation(false);
     
-    const filesToUpload = [...selectedFiles];
+    const filesToUpload = [...selectedFilesMetadata];
     if (filesToUpload.length === 0) return;
+    
+    console.log('Starting upload process for files:', filesToUpload);
     
     // Reset progress states
     setUploadProgress(0);
@@ -657,16 +838,15 @@ const GoogleDrive = () => {
     setShowUploadProgress(true);
     
     // Create a copy for tracking progress
-    setUploadingFiles(new Set(filesToUpload));
+    setUploadingFiles(new Set(filesToUpload.map(f => f.id)));
     
     // Track success and failures
     let successCount = 0;
     let failCount = 0;
     
     for (let i = 0; i < filesToUpload.length; i++) {
-      const fileId = filesToUpload[i];
-      const file = files.find(f => f.id === fileId);
-      if (!file) continue;
+      const file = filesToUpload[i];
+      console.log(`Processing file ${i + 1}/${filesToUpload.length}:`, file.name);
       
       setCurrentFileIndex(i + 1);
       setCurrentUploadFile(file.name);
@@ -676,7 +856,7 @@ const GoogleDrive = () => {
         setUploadProgress(10);
         
         // First get the file metadata to check if it's a Google Workspace file
-        const metadataResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+        const metadataResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${googleToken}`,
@@ -689,6 +869,7 @@ const GoogleDrive = () => {
         }
 
         const metadata = await metadataResponse.json();
+        console.log('File metadata:', metadata);
         
         // If it's a Google Workspace file, use export endpoint
         let downloadUrl;
@@ -701,11 +882,13 @@ const GoogleDrive = () => {
           };
           
           const exportMimeType = exportMimeTypes[metadata.mimeType] || 'application/pdf';
-          downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${exportMimeType}`;
+          downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}/export?mimeType=${exportMimeType}`;
         } else {
-          downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+          downloadUrl = `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`;
         }
 
+        console.log('Downloading file from:', downloadUrl);
+        
         // Download the file
         const response = await fetch(downloadUrl, {
           method: 'GET',
@@ -724,6 +907,7 @@ const GoogleDrive = () => {
         
         // Get the blob from the response
         const blob = await response.blob();
+        console.log('File downloaded, size:', blob.size);
         
         // Create a File object from the blob
         const fileObject = new File([blob], file.name, { 
@@ -731,21 +915,30 @@ const GoogleDrive = () => {
           lastModified: file.modifiedTime ? new Date(file.modifiedTime).getTime() : Date.now() 
         });
         
+        console.log('Storing file in IndexedDB:', fileObject.name);
+        
         // Store file in IndexedDB with 'pending' status
         const storedFile = await storeFile(fileObject, userAddress || 'anonymous');
+        console.log('File stored in IndexedDB:', storedFile);
         
-        // Update the file status to 'uploading'
-        await db.files.update(storedFile.id!, { status: 'uploading' });
+        if (storedFile && storedFile.id) {
+          // Update the file status to 'uploading'
+          await db.files.update(storedFile.id, { status: 'uploading' });
+          console.log('File status updated to uploading');
+          
+          // Update counters
+          successCount++;
+          console.log('Success count increased to:', successCount);
+        } else {
+          throw new Error('Failed to store file in IndexedDB');
+        }
         
         // Almost done
         setUploadProgress(90);
         
-        // Update counters
-        successCount++;
-        
         // Remove from uploading set
         const newUploadingFiles = new Set(uploadingFiles);
-        newUploadingFiles.delete(fileId);
+        newUploadingFiles.delete(file.id);
         setUploadingFiles(newUploadingFiles);
         
         // Set progress to 100% for this file
@@ -757,10 +950,11 @@ const GoogleDrive = () => {
       } catch (error) {
         console.error(`Failed to process ${file.name}:`, error);
         failCount++;
+        console.log('Failure count increased to:', failCount);
         
         // Remove from uploading set even if failed
         const newUploadingFiles = new Set(uploadingFiles);
-        newUploadingFiles.delete(fileId);
+        newUploadingFiles.delete(file.id);
         setUploadingFiles(newUploadingFiles);
       }
     }
@@ -768,14 +962,24 @@ const GoogleDrive = () => {
     // All files processed
     setUploadComplete(true);
     
-    // Show completion message
-    toast.success(`Successfully stored ${successCount} file${successCount !== 1 ? 's' : ''}${failCount > 0 ? ` (${failCount} failed)` : ''}`, {
-      position: "bottom-right",
-      autoClose: 5000,
-    });
+    console.log('Upload process completed. Success:', successCount, 'Failures:', failCount);
     
-    // Clear selection after successful storage
+    // Show completion message with correct counts
+    if (successCount > 0) {
+      toast.success(`Successfully stored ${successCount} file${successCount !== 1 ? 's' : ''} in IndexedDB${failCount > 0 ? ` (${failCount} failed)` : ''}`, {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+    } else {
+      toast.error('Failed to store any files in IndexedDB', {
+        position: "bottom-right",
+        autoClose: 5000,
+      });
+    }
+    
+    // Clear selection after storage attempt
     setSelectedFiles(new Set());
+    setSelectedFilesMetadata([]);
     setSelectionMode(false);
 
     // Start Arweave upload process
@@ -1441,9 +1645,10 @@ const GoogleDrive = () => {
       {/* Upload Confirmation Modal */}
       {showUploadConfirmation && (
         <UploadConfirmationModal
-          selectedFiles={files.filter(file => selectedFiles.has(file.id))}
+          selectedFiles={selectedFilesMetadata}
           onConfirm={handleConfirmUpload}
           onCancel={() => setShowUploadConfirmation(false)}
+          onCompressImages={handleCompressImages}
         />
       )}
 

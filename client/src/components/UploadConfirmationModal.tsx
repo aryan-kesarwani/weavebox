@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiX, FiUpload } from 'react-icons/fi';
+import { FiX, FiUpload, FiImage } from 'react-icons/fi';
 
 interface UploadConfirmationModalProps {
   selectedFiles: any[];
   onConfirm: () => void;
   onCancel: () => void;
+  onCompressImages?: () => void;
 }
 
-const UploadConfirmationModal = ({ selectedFiles, onConfirm, onCancel }: UploadConfirmationModalProps) => {
+const UploadConfirmationModal = ({ selectedFiles, onConfirm, onCancel, onCompressImages }: UploadConfirmationModalProps) => {
   const [totalSize, setTotalSize] = useState(0);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
+  const [hasImages, setHasImages] = useState(false);
 
   useEffect(() => {
     // Calculate total size
@@ -20,8 +22,15 @@ const UploadConfirmationModal = ({ selectedFiles, onConfirm, onCancel }: UploadC
     }, 0);
     setTotalSize(size);
 
+    // Check if there are any images
+    const images = selectedFiles.filter(file => 
+      file.type?.startsWith('image/') || 
+      file.mimeType?.startsWith('image/') ||
+      file.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    );
+    setHasImages(images.length > 0);
+
     // Calculate estimated price (simplified)
-    // In a real app, this would call a price estimation API
     const estimatedArweavePrice = size * 0.00000002; // Simplified price estimate
     setEstimatedPrice(estimatedArweavePrice);
   }, [selectedFiles]);
@@ -95,6 +104,15 @@ const UploadConfirmationModal = ({ selectedFiles, onConfirm, onCancel }: UploadC
             >
               Cancel
             </button>
+            {hasImages && onCompressImages && (
+              <button
+                onClick={onCompressImages}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+              >
+                <FiImage className="mr-2" />
+                Compress Images
+              </button>
+            )}
             <button
               onClick={onConfirm}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
