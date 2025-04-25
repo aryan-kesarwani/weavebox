@@ -26,7 +26,8 @@ class ImageCacheDB {
       
       request.onerror = () => reject(request.error);
       
-      request.onupgradeneeded = (event) => {
+      // request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(this.storeName)) {
           db.createObjectStore(this.storeName, { keyPath: 'id' });
@@ -123,7 +124,8 @@ class ImageCacheDB {
         
         request.onerror = () => reject(request.error);
         
-        request.onsuccess = (event) => {
+        // request.onsuccess = (event) => {
+        request.onsuccess = () => {
           const cursor = request.result;
           if (cursor) {
             const cachedImage = cursor.value as CachedImage;
@@ -167,7 +169,8 @@ class ImageCacheDB {
         request.onerror = () => reject(request.error);
         
         // First collect all entries
-        request.onsuccess = (event) => {
+        // request.onsuccess = (event) => {
+        request.onsuccess = () => {
           const cursor = request.result;
           if (cursor) {
             entries.push(cursor.value as CachedImage);

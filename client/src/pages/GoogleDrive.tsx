@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiExternalLink, FiDownload, FiX } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
+import { FiUpload, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiExternalLink, FiDownload, FiX } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
 import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import { ToastContainer, toast } from 'react-toastify';
@@ -27,14 +27,15 @@ interface GoogleDriveFile {
   modifiedTime?: string;
 }
 
+type SortOption = 'name-asc' | 'name-desc' | 'date-asc' | 'date-desc';
 const GoogleDrive = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  // const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [fileTypeFilter, setFileTypeFilter] = useState('all');
-  const [sortOption, setSortOption] = useState('name-asc');
-  const [showFileTypeDropdown, setShowFileTypeDropdown] = useState(false);
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const fileTypeFilter = 'all';
+  const sortOption: SortOption = 'name-asc';
+  // const [showFileTypeDropdown, setShowFileTypeDropdown] = useState(false);
+  // const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [files, setFiles] = useState<GoogleDriveFile[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState('root');
   const [folderPath, setFolderPath] = useState<{ id: string; name: string }[]>([{ id: 'root', name: 'My Drive' }]);
@@ -42,7 +43,7 @@ const GoogleDrive = () => {
   const [selectedFileDetails, setSelectedFileDetails] = useState<string | null>(null);
   const [previewModal, setPreviewModal] = useState<string | null>(null);
   const [googleToken, setGoogleToken] = useState<string | null>(null);
-  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  // const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -66,8 +67,8 @@ const GoogleDrive = () => {
   const [isRefreshingToken, setIsRefreshingToken] = useState(false);
 
   const navigate = useNavigate();
-  const { userAddress, handleDisconnect } = useArweaveWallet();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+  const { userAddress } = useArweaveWallet();
+  const { darkMode } = useDarkMode();
   useGoogleUser();
 
   // Check for Google token and load files
@@ -77,7 +78,7 @@ const GoogleDrive = () => {
 
     if (token && connected) {
       setGoogleToken(token);
-      setIsGoogleConnected(true);
+      // setIsGoogleConnected(true);
       loadFiles(currentFolderId, token);
     } else {
       setAuthError(true);
@@ -99,11 +100,11 @@ const GoogleDrive = () => {
       if (e.target instanceof Element) {
         if (!e.target.closest('.file-type-dropdown') && 
             !e.target.closest('.file-type-button')) {
-          setShowFileTypeDropdown(false);
+          // setShowFileTypeDropdown(false);
         }
         if (!e.target.closest('.sort-dropdown') && 
             !e.target.closest('.sort-button')) {
-          setShowSortDropdown(false);
+          // setShowSortDropdown(false);
         }
         if (selectedFileDetails && 
             !e.target.closest('.file-menu-button') && 
@@ -232,7 +233,7 @@ const GoogleDrive = () => {
             
             // Update state and load files
             setGoogleToken(response.access_token);
-            setIsGoogleConnected(true);
+            // setIsGoogleConnected(true);
             setAuthError(false);
             await loadFiles(currentFolderId, response.access_token);
             
@@ -267,21 +268,21 @@ const GoogleDrive = () => {
     loadFiles(folderId);
   };
 
-  const handleDisconnectWallet = () => {
-    handleDisconnect();
-    navigate('/');
-  };
+  // const handleDisconnectWallet = () => {
+  //   handleDisconnect();
+  //   navigate('/');
+  // };
 
-  const handleDisconnectGoogle = () => {
-    // Clear all Google-related data from localStorage
-    localStorage.removeItem('google_access_token');
-    localStorage.removeItem('google_token_timestamp');
-    localStorage.removeItem('google_connected');
-    localStorage.removeItem('google_user');
+  // const handleDisconnectGoogle = () => {
+  //   // Clear all Google-related data from localStorage
+  //   localStorage.removeItem('google_access_token');
+  //   localStorage.removeItem('google_token_timestamp');
+  //   localStorage.removeItem('google_connected');
+  //   localStorage.removeItem('google_user');
     
-    // Navigate to dashboard
-    navigate('/dashboard');
-  };
+  //   // Navigate to dashboard
+  //   navigate('/dashboard');
+  // };
 
   // Get file type icon
   const getFileIcon = (mimeType: string) => {
@@ -404,29 +405,29 @@ const GoogleDrive = () => {
   };
 
   // Get file extension from MIME type
-  const getFileExtension = (mimeType: string): string => {
-    const mimeToExt: {[key: string]: string} = {
-      'image/jpeg': 'jpg',
-      'image/png': 'png',
-      'image/gif': 'gif',
-      'image/svg+xml': 'svg',
-      'image/webp': 'webp',
-      'application/pdf': 'pdf',
-      'text/plain': 'txt',
-      'text/html': 'html',
-      'text/css': 'css',
-      'text/javascript': 'js',
-      'application/json': 'json',
-      'application/xml': 'xml',
-      'application/zip': 'zip',
-      'application/x-rar-compressed': 'rar',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx'
-    };
+  // const getFileExtension = (mimeType: string): string => {
+  //   const mimeToExt: {[key: string]: string} = {
+  //     'image/jpeg': 'jpg',
+  //     'image/png': 'png',
+  //     'image/gif': 'gif',
+  //     'image/svg+xml': 'svg',
+  //     'image/webp': 'webp',
+  //     'application/pdf': 'pdf',
+  //     'text/plain': 'txt',
+  //     'text/html': 'html',
+  //     'text/css': 'css',
+  //     'text/javascript': 'js',
+  //     'application/json': 'json',
+  //     'application/xml': 'xml',
+  //     'application/zip': 'zip',
+  //     'application/x-rar-compressed': 'rar',
+  //     'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  //     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  //     'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx'
+  //   };
     
-    return mimeToExt[mimeType] || mimeType.split('/')[1] || 'file';
-  };
+  //   return mimeToExt[mimeType] || mimeType.split('/')[1] || 'file';
+  // };
 
   // Filter and sort files
   const filteredFiles = files.filter(file => {
@@ -444,7 +445,7 @@ const GoogleDrive = () => {
     if (aIsFolder && !bIsFolder) return -1;
     if (!aIsFolder && bIsFolder) return 1;
     
-    switch (sortOption) {
+    switch (sortOption as SortOption) {
       case 'name-asc':
         return a.name.localeCompare(b.name);
       case 'name-desc':
@@ -575,44 +576,45 @@ const GoogleDrive = () => {
     }
   }, [previewModal, files]);
 
-  const cacheGoogleDriveImage = async (fileId: string, fileName: string, blob: Blob) => {
-    // Skip caching if the blob is too large (e.g., > 5MB)
-    if (blob.size > 5 * 1024 * 1024) return;
+  // const cacheGoogleDriveImage = async (fileId: string, fileName: string, blob: Blob) => {
+  //   // Skip caching if the blob is too large (e.g., > 5MB)
+  //   if (blob.size > 5 * 1024 * 1024) return;
     
-    try {
-      if (typeof window.indexedDB !== 'undefined') {
-        const request = window.indexedDB.open('GoogleDriveImageCache', 1);
+  //   try {
+  //     if (typeof window.indexedDB !== 'undefined') {
+  //       const request = window.indexedDB.open('GoogleDriveImageCache', 1);
         
-        // Set up the database if it doesn't exist
-        request.onupgradeneeded = (event) => {
-          const db = request.result;
-          if (!db.objectStoreNames.contains('images')) {
-            db.createObjectStore('images', { keyPath: 'id' });
-          }
-        };
+  //       // Set up the database if it doesn't exist
+  //       // request.onupgradeneeded = (event) => {
+  //       request.onupgradeneeded = () => {
+  //         const db = request.result;
+  //         if (!db.objectStoreNames.contains('images')) {
+  //           db.createObjectStore('images', { keyPath: 'id' });
+  //         }
+  //       };
         
-        // Once the database is open, store the image
-        request.onsuccess = () => {
-          const db = request.result;
-          const tx = db.transaction(['images'], 'readwrite');
-          const store = tx.objectStore('images');
+  //       // Once the database is open, store the image
+  //       request.onsuccess = () => {
+  //         const db = request.result;
+  //         const tx = db.transaction(['images'], 'readwrite');
+  //         const store = tx.objectStore('images');
           
-          store.put({
-            id: fileId,
-            name: fileName,
-            blob: blob,
-            timestamp: Date.now()
-          });
-        };
+  //         store.put({
+  //           id: fileId,
+  //           name: fileName,
+  //           blob: blob,
+  //           timestamp: Date.now()
+  //         });
+  //       };
 
-        request.onerror = (event) => {
-          console.error("IndexedDB error:", event);
-        };
-      }
-    } catch (error) {
-      console.warn('Failed to cache image in IndexedDB:', error);
-    }
-  };
+  //       request.onerror = (event) => {
+  //         console.error("IndexedDB error:", event);
+  //       };
+  //     }
+  //   } catch (error) {
+  //     console.warn('Failed to cache image in IndexedDB:', error);
+  //   }
+  // };
 
   const toggleSelectionMode = () => {
     if (selectionMode) {
@@ -804,7 +806,7 @@ const GoogleDrive = () => {
   const fetchTransactions = async () => {
     setIsLoadingTransactions(true);
     try {
-      const txns = await getTxns();
+      const txns = await getTxns(userAddress);
       setTransactions(txns);
       setIsRightSidebarOpen(true);
     } catch (error) {

@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus, FiArrowRight, FiFile, FiMusic, FiDownload, FiExternalLink, FiCopy, FiX } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
-import API from '../globals/axiosConfig';
+import {  useNavigate } from 'react-router-dom';
+// import API from '../globals/axiosConfig';
 import { useArweaveWallet, useDarkMode } from '../utils/util';
-import accessDriveFiles from '../googleAuths/accessDriveFiles';
+// import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { getStoredFiles, StoredFile } from '../utils/fileStorage';
 import Sidebar from '../components/Sidebar'; // Import the Sidebar component
 import Navbar from '../components/Navbar'; // Import the Navbar component
+import TransactionSidebar from '../components/TransactionSidebar';
+import { getTxns } from '../contracts/getTxns';
 
 // Declare the google namespace for TypeScript
 declare global {
@@ -30,27 +32,31 @@ declare global {
   }
 }
 
-interface GoogleDriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-}
+// interface GoogleDriveFile {
+//   id: string;
+//   name: string;
+//   mimeType: string;
+// }
 
-type Props = {
-  onFolderClick?: (folderId: string) => void; // Optional: For in-app folder navigation
-};
+// type Props = {
+//   onFolderClick?: (folderId: string) => void; // Optional: For in-app folder navigation
+// };
 
-const Dashboard = ({ onFolderClick }: Props) => {
+// const Dashboard = ({ onFolderClick }: Props) => 
+const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedFileDetails, setSelectedFileDetails] = useState<number | null>(null);
   const [fileDetailModal, setFileDetailModal] = useState<number | null>(null);
   const [previewModal, setPreviewModal] = useState<number | null>(null);
-  const [files, setFiles] = useState<GoogleDriveFile[]>([]);
+  // const [files, setFiles] = useState<GoogleDriveFile[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   const navigate = useNavigate();
-  const { userAddress, handleDisconnect } = useArweaveWallet();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+  const { userAddress } = useArweaveWallet();
+  const { darkMode } = useDarkMode();
 
   const [recentFiles, setRecentFiles] = useState<StoredFile[]>([]);
 
@@ -149,10 +155,10 @@ const Dashboard = ({ onFolderClick }: Props) => {
     client.requestAccessToken();
   };
 
-  const handleDisconnectWallet = () => {
-    handleDisconnect();
-    navigate('/');
-  };
+  // const handleDisconnectWallet = () => {
+  //   handleDisconnect();
+  //   navigate('/');
+  // };
 
   const getFileIcon = (type: string) => {
     switch(type) {
@@ -167,17 +173,43 @@ const Dashboard = ({ onFolderClick }: Props) => {
     }
   };
 
+  // Fetch Transaction
+  const fetchTransactions = async () => {
+    setIsLoadingTransactions(true);
+    try {
+      const txns = await getTxns(userAddress || '');
+      setTransactions(txns);
+      setIsRightSidebarOpen(true);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to fetch transactions');
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
+      <ToastContainer theme={darkMode ? 'dark' : 'light'} />
+      
       {/* Use the Navbar component */}
       <Navbar 
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         currentPage="dashboard"
+        fetchTransactions={fetchTransactions}
       />
 
       {/* Sidebar */}
       <Sidebar isSidebarOpen={isSidebarOpen} currentPage="dashboard" />
+
+      {/* Transaction History Sidebar */}
+      <TransactionSidebar
+        isOpen={isRightSidebarOpen}
+        onClose={() => setIsRightSidebarOpen(false)}
+        transactions={transactions}
+        isLoading={isLoadingTransactions}
+      />
 
       {/* Main Content */}
       <div className={`pt-16 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'ml-[250px]' : 'ml-0'}`}>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMenu, FiX, FiUser, FiChevronLeft } from 'react-icons/fi';
+import { FiMenu, FiUser, FiChevronLeft } from 'react-icons/fi';
 import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
 import { toast } from 'react-toastify';
 
@@ -170,12 +170,12 @@ const Navbar = ({ isSidebarOpen, setIsSidebarOpen, currentPage, fetchTransaction
                       >
                         Transaction History
                       </button>
-                      <button
-                        onClick={handleDisconnectWallet}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        Disconnect Wallet
-                      </button>
+                    <button
+                      onClick={handleDisconnectWallet}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      Disconnect Wallet
+                    </button>
                     </>
                   )}
                 </div>

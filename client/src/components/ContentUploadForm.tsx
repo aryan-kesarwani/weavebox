@@ -83,7 +83,7 @@ const ContentUploadForm = () => {
   const [submitError, setSubmitError] = useState('');
 
   // Content upload state
-  const [ contentData, setContentData ] = useState<FeedPayload | null>(null);
+  // const [ contentData, setContentData ] = useState<FeedPayload | null>(null);
   const keySelector = useSelector((state : StateType) => (state.arConnectionState.walletKey));
   
   // Preserve user wallet address on page refresh

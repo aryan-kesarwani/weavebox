@@ -19,13 +19,13 @@ interface GraphQLResponse {
 }
 
 
-export const getTxns = async () => {
+export const getTxns = async (userAddress: string) => {
   const query = `{
     transactions(
       tags: [
-        { name: "Wallet-Address", values: ["X1eaByYsceY-fVzlHubyLAFeH5IYckL1emmDayCSe0A"] }
+        { name: "Wallet-Address", values: ["${userAddress}"] }
       ]
-      first: 10
+      first: 100
     ) {
       edges {
         node {

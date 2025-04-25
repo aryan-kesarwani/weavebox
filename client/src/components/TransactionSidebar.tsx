@@ -38,7 +38,7 @@ const TransactionSidebar = ({ isOpen, onClose, transactions, isLoading }: Transa
           initial={{ x: '100%' }}
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
-          transition={{ type: 'spring', damping: 20 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
           className="fixed right-0 top-0 h-full w-96 bg-white dark:bg-gray-800 shadow-xl z-50"
         >
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -53,8 +53,9 @@ const TransactionSidebar = ({ isOpen, onClose, transactions, isLoading }: Transa
 
           <div className="p-4 overflow-y-auto h-[calc(100%-4rem)]">
             {isLoading ? (
-              <div className="flex justify-center items-center h-full">
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Fetching transactions...</p>
               </div>
             ) : transactions.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400">
@@ -63,8 +64,11 @@ const TransactionSidebar = ({ isOpen, onClose, transactions, isLoading }: Transa
             ) : (
               <div className="space-y-4">
                 {transactions.map((txn, index) => (
-                  <div
+                  <motion.div
                     key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
                     className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
                   >
                     <div className="flex items-start space-x-3">
@@ -95,7 +99,7 @@ const TransactionSidebar = ({ isOpen, onClose, transactions, isLoading }: Transa
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}

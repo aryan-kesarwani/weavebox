@@ -1,51 +1,56 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiFolderPlus, FiDownload, FiExternalLink, FiCopy, FiX } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
-import { useArweaveWallet, useDarkMode } from '../utils/util';
+import {  FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown,  FiExternalLink, FiCopy, FiX } from 'react-icons/fi';
+import { useDarkMode } from '../utils/util';
 import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import API from '../globals/axiosConfig';
-import { getStoredFiles, storeFile, StoredFile } from '../utils/fileStorage';
+import { getStoredFiles, StoredFile } from '../utils/fileStorage';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import { useArweaveTransactions } from '../hooks/useArweaveTransactions';
+import TransactionSidebar from '../components/TransactionSidebar';
+import { getTxns } from '../contracts/getTxns';
+import { useSelector } from 'react-redux';
+import { RootState } from '../redux/store';
 
-interface Transaction {
-  id: string;
-  tags: Array<{
-    name: string;
-    value: string;
-  }>;
-}
+// interface Transaction {
+//   id: string;
+//   tags: Array<{
+//     name: string;
+//     value: string;
+//   }>;
+// }
 
 interface Tag {
   name: string;
   value: string;
 }
 
-const Uploads = () => {
+const ArweaveFiles = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  // const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
   const [sortOption, setSortOption] = useState('date-desc');
   const [showFileTypeDropdown, setShowFileTypeDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showUploadPopup, setShowUploadPopup] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [priceEstimate, setPriceEstimate] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
+  // const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  // const [priceEstimate, setPriceEstimate] = useState<string | null>(null);
+  // const [uploadProgress, setUploadProgress] = useState(0);
+  // const [isUploading, setIsUploading] = useState(false);
   const [selectedFileDetails, setSelectedFileDetails] = useState<string | null>(null);
   const [fileDetailModal, setFileDetailModal] = useState<string | null>(null);
   const [previewModal, setPreviewModal] = useState<string | null>(null);
 
-  const navigate = useNavigate();
-  const { userAddress, handleDisconnect } = useArweaveWallet();
-  const { darkMode, toggleDarkMode } = useDarkMode();
-  const { transactions, loading, error, loadMore, hasMore } = useArweaveTransactions();
+  // const navigate = useNavigate();
+  const { userAddress } = useSelector((state: RootState) => state.arConnectionState);
+  const { darkMode } = useDarkMode();
+  const { transactions: arweaveTransactions, loading, error, loadMore, hasMore } = useArweaveTransactions();
 
   const [uploadedFiles, setUploadedFiles] = useState<StoredFile[]>([]);
 
@@ -141,17 +146,17 @@ const Uploads = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  const handleDisconnectWallet = () => {
-    handleDisconnect();
-    navigate('/');
-  };
+  // const handleDisconnectWallet = () => {
+  //   handleDisconnect();
+  //   navigate('/');
+  // };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
-      setSelectedFile(acceptedFiles[0]);
+      // setSelectedFile(acceptedFiles[0]);
       const fileSize = acceptedFiles[0].size;
-      const price = fileSize < 100 * 1024 ? 0 : (fileSize / 1000000) * 0.1;
-      setPriceEstimate(`$${price.toFixed(4)}`);
+     fileSize < 100 * 1024 ? 0 : (fileSize / 1000000) * 0.1;
+      // setPriceEstimate(`$${price.toFixed(4)}`);
     }
   }, []);
 
@@ -167,95 +172,95 @@ const Uploads = () => {
   });
 
   const clearFileSelection = () => {
-    setSelectedFile(null);
-    setPriceEstimate(null);
-    setUploadProgress(0);
+    // setSelectedFile(null);
+    // setPriceEstimate(null);
+    // setUploadProgress(0);
   };
 
-  const handleCloseUploadPopup = () => {
-    setShowUploadPopup(false);
-    clearFileSelection();
-  };
+  // const handleCloseUploadPopup = () => {
+  //   setShowUploadPopup(false);
+  //   clearFileSelection();
+  // };
 
-  const handleDeviceUpload = async () => {
-    if (!selectedFile) return;
+  // const handleDeviceUpload = async () => {
+  //   if (!selectedFile) return;
     
-    setIsUploading(true);
-    setUploadProgress(0);
+  //   setIsUploading(true);
+  //   setUploadProgress(0);
     
-    try {
-      const simulateProgress = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(simulateProgress);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
+  //   try {
+  //     const simulateProgress = setInterval(() => {
+  //       setUploadProgress(prev => {
+  //         if (prev >= 90) {
+  //           clearInterval(simulateProgress);
+  //           return 90;
+  //         }
+  //         return prev + 10;
+  //       });
+  //     }, 300);
       
-      const newFile = await storeFile(selectedFile, userAddress || '');
+  //     const newFile = await storeFile(selectedFile, userAddress || '');
       
-      clearInterval(simulateProgress);
-      setUploadProgress(100);
+  //     clearInterval(simulateProgress);
+  //     setUploadProgress(100);
       
-      setUploadedFiles(prevFiles => [newFile, ...prevFiles]);
+  //     setUploadedFiles(prevFiles => [newFile, ...prevFiles]);
       
-      setIsUploading(false);
-      toast.success('File uploaded successfully!', {
-        position: "bottom-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+  //     setIsUploading(false);
+  //     toast.success('File uploaded successfully!', {
+  //       position: "bottom-right",
+  //       autoClose: 3000,
+  //       hideProgressBar: false,
+  //       closeOnClick: true,
+  //       pauseOnHover: true,
+  //       draggable: true,
+  //     });
       
-      clearFileSelection();
-      setShowUploadPopup(false);
+  //     clearFileSelection();
+  //     setShowUploadPopup(false);
       
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error('Failed to upload file. Please try again.', {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
-      setIsUploading(false);
-    }
-  };
+  //   } catch (error) {
+  //     console.error('Error uploading file:', error);
+  //     toast.error('Failed to upload file. Please try again.', {
+  //       position: "bottom-right",
+  //       autoClose: 3000,
+  //     });
+  //     setIsUploading(false);
+  //   }
+  // };
 
-  const handleGoogleLogin = () => {
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive',
-      callback: async (response: { access_token: string }) => {
-        console.log('Token', response.access_token);
-        if (response.access_token) {
-          try {
-            const result = await API.post('/auth/verify', {
-              access_token: response.access_token
-            });
-            console.log('Login successful:', result);
-            localStorage.setItem('googleAccessToken', response.access_token);
-            toast.success('Connected to Google Drive successfully!', {
-              position: "bottom-right",
-              autoClose: 3000,
-            });
-            clearFileSelection();
-            setShowUploadPopup(false);
-          } catch (error) {
-            console.error('Error during login:', error);
-            toast.error('Failed to connect to Google Drive', {
-              position: "bottom-right",
-              autoClose: 3000,
-            });
-          }
-        }
-      },
-    });
+  // const handleGoogleLogin = () => {
+  //   const client = window.google.accounts.oauth2.initTokenClient({
+  //     client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  //     scope: 'https://www.googleapis.com/auth/drive',
+  //     callback: async (response: { access_token: string }) => {
+  //       console.log('Token', response.access_token);
+  //       if (response.access_token) {
+  //         try {
+  //           const result = await API.post('/auth/verify', {
+  //             access_token: response.access_token
+  //           });
+  //           console.log('Login successful:', result);
+  //           localStorage.setItem('googleAccessToken', response.access_token);
+  //           toast.success('Connected to Google Drive successfully!', {
+  //             position: "bottom-right",
+  //             autoClose: 3000,
+  //           });
+  //           clearFileSelection();
+  //           setShowUploadPopup(false);
+  //         } catch (error) {
+  //           console.error('Error during login:', error);
+  //           toast.error('Failed to connect to Google Drive', {
+  //             position: "bottom-right",
+  //             autoClose: 3000,
+  //           });
+  //         }
+  //       }
+  //     },
+  //   });
 
-    client.requestAccessToken();
-  };
+  //   client.requestAccessToken();
+  // };
 
   const getFileType = (tags: Tag[]) => {
     const contentType = tags.find(tag => tag.name === 'Content-Type')?.value || '';
@@ -266,10 +271,10 @@ const Uploads = () => {
     return 'file';
   };
 
-  const filteredTransactions = transactions.filter(tx => {
+  const filteredTransactions = arweaveTransactions.filter(tx => {
     const matchesSearch = tx.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = fileTypeFilter === 'all' || 
-      tx.tags.some(tag => tag.name === 'Content-Type' && tag.value.includes(fileTypeFilter));
+      tx.tags.some((tag: Tag) => tag.name === 'Content-Type' && tag.value.includes(fileTypeFilter));
     return matchesSearch && matchesType;
   });
 
@@ -333,6 +338,21 @@ const Uploads = () => {
     }
   };
 
+  // Fetch Transaction
+  const fetchTransactions = async () => {
+    setIsLoadingTransactions(true);
+    try {
+      const txns = await getTxns(userAddress);
+      setTransactions(txns);
+      setIsRightSidebarOpen(true);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to fetch transactions');
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       <ToastContainer theme={darkMode ? 'dark' : 'light'} />
@@ -340,10 +360,18 @@ const Uploads = () => {
       <Navbar 
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
-        currentPage="uploads"
+        currentPage="arweavefiles"
+        fetchTransactions={fetchTransactions}
       />
 
-      <Sidebar isSidebarOpen={isSidebarOpen} currentPage="uploads" />
+      <Sidebar isSidebarOpen={isSidebarOpen} currentPage="arweavefiles" />
+
+      <TransactionSidebar
+        isOpen={isRightSidebarOpen}
+        onClose={() => setIsRightSidebarOpen(false)}
+        transactions={transactions}
+        isLoading={isLoadingTransactions}
+      />
 
       <div className={`pt-16 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'ml-[250px]' : 'ml-0'}`}>
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -624,7 +652,7 @@ const Uploads = () => {
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Content Type</p>
                         <p className="font-medium text-gray-900 dark:text-white">
-                          {tx.tags.find(tag => tag.name === 'Content-Type')?.value || 'Unknown'}
+                          {tx.tags.find((tag: Tag) => tag.name === 'Content-Type')?.value || 'Unknown'}
                         </p>
                       </div>
                     </div>
@@ -738,4 +766,4 @@ const Uploads = () => {
   );
 };
 
-export default Uploads;
+export default ArweaveFiles;

@@ -86,12 +86,12 @@ export const getWalletAddress = async (key: JWKInterface) => {
     }
 }
 
-interface ProfileData {
-    walletAddress : string,
-    fullName : string,
-    username : string,
-    interests : string[],
-}
+// interface ProfileData {
+//     walletAddress : string,
+//     fullName : string,
+//     username : string,
+//     interests : string[],
+// }
 
 export const createTransaction = async (profileData : any, key : JWKInterface) => {
     try {

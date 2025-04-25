@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector } from "react-redux";
-import { RootState } from "../redux/store";
+import React, { useEffect } from 'react';
+// import { useSelector } from "react-redux";
+// import { RootState } from "../redux/store";
 import getTxns from '../contracts/getTxns';
 
-const userAddress = useSelector((state: RootState) => state.arConnectionState.userAddress);
+// const userAddress = useSelector((state: RootState) => state.arConnectionState.userAddress);
 
 interface Tag {
   name: string;
@@ -20,11 +20,12 @@ interface ArweaveTxnsProps {
 }
 
 const ArweaveTxns: React.FC<ArweaveTxnsProps> = ({ userAddress }) => {
-    const [txns, setTxns] = useState<Transaction[]>([]);
+    // const [txns, setTxns] = useState<Transaction[]>([]);
+    const txns: Transaction[] = [];
     
     useEffect(() => {
         if (userAddress) {
-            getTxns();
+            getTxns(userAddress || '');
           }
         }, [userAddress])
 

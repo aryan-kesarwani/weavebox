@@ -1,4 +1,4 @@
-import API from '../globals/axiosConfig';
+// import API from '../globals/axiosConfig';
 
 interface GoogleDriveFile {
   id: string;
@@ -10,9 +10,9 @@ interface GoogleDriveFile {
   modifiedTime?: string;
 }
 
-interface GoogleDriveResponse {
-  files: GoogleDriveFile[];
-}
+// interface GoogleDriveResponse {
+//   files: GoogleDriveFile[];
+// }
 
 const accessDriveFiles = async (token: string, folderId: string = 'root'): Promise<GoogleDriveFile[]> => {
   if (!token) {

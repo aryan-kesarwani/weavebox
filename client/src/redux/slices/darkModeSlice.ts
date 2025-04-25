@@ -4,7 +4,7 @@ const darkModeSlice = createSlice({
   name: 'darkMode',
   initialState: true,
   reducers: {
-    setDarkMode: (state, action: PayloadAction<boolean>) => {
+    setDarkMode: (_, action: PayloadAction<boolean>) => {
       return action.payload;
     }
   },

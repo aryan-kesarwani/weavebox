@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from 'react-router-dom'
-import { useArweaveWallet, useDarkMode } from '../utils/util'
+import { useArweaveWallet } from '../utils/util'
 import { setUserAddress } from '../redux/slices/arConnectionSlice'
 import { useDispatch } from 'react-redux'
 
