@@ -1,7 +1,7 @@
 # WeaveBox
 
 <div align="center">
-  <img src="https://via.placeholder.com/200x200?text=WeaveBox" alt="WeaveBox Logo" width="200"/>
+  <img src="https://qwq2juf37zc446w7r67ifqznsx5a5k44sl7rjxasxtgqnep6fzta.arweave.net/haGk0Lv-Rc5634--gsMtlfoOq5yS_xTcErzNBpH-LmY" alt="WeaveBox Logo" width="200"/>
   
   **Your bridge from Google Drive to the permanent web.**
   
@@ -41,19 +41,6 @@ WeaveBox makes it simple to preserve your valuable digital assets forever on the
 - **Dark/Light Mode**: Choose your preferred theme
 - **Drag & Drop**: Upload files directly from your computer
 - **Bulk Operations**: Select and upload multiple files simultaneously
-
-## 🖼️ Screenshots
-
-<div align="center">
-  <p><i>Google Drive Files Browse Interface</i></p>
-  <img src="https://via.placeholder.com/800x450?text=Google+Drive+Interface" alt="Google Drive Interface" width="800"/>
-  
-  <p><i>File Preview</i></p>
-  <img src="https://via.placeholder.com/800x450?text=File+Preview" alt="File Preview" width="800"/>
-  
-  <p><i>Arweave Upload Process</i></p>
-  <img src="https://via.placeholder.com/800x450?text=Arweave+Upload" alt="Arweave Upload" width="800"/>
-</div>
 
 ## 🛠️ Technology Stack
 
