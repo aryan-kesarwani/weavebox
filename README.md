@@ -1,5 +1,3 @@
-# WeaveBox
-
 <div align="center">
   <img src="https://qwq2juf37zc446w7r67ifqznsx5a5k44sl7rjxasxtgqnep6fzta.arweave.net/haGk0Lv-Rc5634--gsMtlfoOq5yS_xTcErzNBpH-LmY" alt="WeaveBox Logo" width="200"/>
   
