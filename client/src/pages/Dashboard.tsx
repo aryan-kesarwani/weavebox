@@ -182,30 +182,38 @@ const Dashboard = ({ onFolderClick }: Props) => {
       {/* Main Content */}
       <div className={`pt-16 min-h-screen transition-all duration-300 ${isSidebarOpen ? 'ml-[250px]' : 'ml-0'}`}>
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-4xl font-bold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-            Upload Your Files
-          </h1>
+          {/* Enhanced Header Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+              Welcome to WeaveBox
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Your gateway to permanent, decentralized storage on Arweave. Upload files from your device or import from Google Drive.
+            </p>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Enhanced Upload Options Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
             {/* Local Upload Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+              whileHover={{ scale: 1.02 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
             >
               <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FiUpload size={32} className="text-blue-600 dark:text-blue-400" />
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <FiUpload size={40} className="text-blue-600 dark:text-blue-400" />
                 </div>
                 <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Upload from Device</h2>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                <p className="text-gray-600 dark:text-gray-300 mb-8">
                   Upload files directly from your computer or mobile device to Arweave's permanent storage.
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigate('/upload')}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
                   Upload Files
                 </motion.button>
@@ -217,21 +225,22 @@ const Dashboard = ({ onFolderClick }: Props) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow"
+              whileHover={{ scale: 1.02 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700"
             >
               <div className="text-center">
-                <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FiFolderPlus size={32} className="text-purple-600 dark:text-purple-400" />
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <FiFolderPlus size={40} className="text-purple-600 dark:text-purple-400" />
                 </div>
                 <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Import from Google Drive</h2>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
+                <p className="text-gray-600 dark:text-gray-300 mb-8">
                   Connect your Google Drive account to import and permanently store your files on Arweave.
                 </p>
                 <motion.button
                   onClick={isGoogleConnected ? () => navigate('/google-drive') : handleGoogleLogin}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold shadow-lg"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
                   {isGoogleConnected ? 'View Drive' : 'Connect Google Drive'}
                 </motion.button>
@@ -239,15 +248,20 @@ const Dashboard = ({ onFolderClick }: Props) => {
             </motion.div>
           </div>
 
-          {/* Recent Files Section */}
+          {/* Enhanced Recent Files Section */}
           <div className="mt-20 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Recent Files</h2>
+              <div className="flex items-center space-x-4">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Recent Files</h2>
+                <span className="text-sm text-gray-500 dark:text-gray-400 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  {recentFiles.length} {recentFiles.length === 1 ? 'file' : 'files'}
+                </span>
+              </div>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/uploads')}
-                className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 font-medium"
+                className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200"
               >
                 <span>View All</span>
                 <FiArrowRight size={16} />
@@ -255,12 +269,14 @@ const Dashboard = ({ onFolderClick }: Props) => {
             </div>
             
             {recentFiles.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {recentFiles.map((file) => (
                   <motion.div
                     key={file.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     whileHover={{ scale: 1.03 }}
-                    className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer relative"
+                    className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer relative group"
                   >
                     {/* Three dots menu */}
                     <button 
@@ -268,26 +284,26 @@ const Dashboard = ({ onFolderClick }: Props) => {
                         e.stopPropagation();
                         setSelectedFileDetails(file.id !== undefined && selectedFileDetails === file.id ? null : file.id ?? null);
                       }}
-                      className="absolute top-2 right-2 z-10 p-1 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full text-white file-menu-button"
+                      className="absolute top-3 right-3 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white file-menu-button transition-all duration-200"
                     >
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                       </svg>
                     </button>
 
-                    {/* File card onClick handler - to open preview */}
+                    {/* File Preview */}
                     <div 
-                      className="relative h-40 bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer"
+                      className="relative h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer overflow-hidden"
                       onClick={() => setPreviewModal(file.id ?? null)}
                     >
                       {file.type === 'image' ? (
                         <img 
                           src={file.url} 
                           alt={file.name} 
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="flex flex-col items-center justify-center">
+                        <div className="flex flex-col items-center justify-center p-4">
                           {getFileIcon(file.type)}
                           <span className="text-xs mt-2 uppercase text-gray-500 dark:text-gray-400">
                             {file.name.split('.').pop()}
@@ -296,9 +312,24 @@ const Dashboard = ({ onFolderClick }: Props) => {
                       )}
                     </div>
 
-                    {/* Dropdown menu */}
+                    {/* File Info */}
+                    <div className="p-4">
+                      <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate" title={file.name}>
+                        {file.name}
+                      </h3>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {file.date}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {file.size}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* File Actions Dropdown */}
                     {selectedFileDetails === file.id && (
-                      <div className="absolute top-2 right-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-30 border border-gray-200 dark:border-gray-700 file-menu-dropdown">
+                      <div className="absolute top-12 right-3 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl z-30 border border-gray-200 dark:border-gray-700 file-menu-dropdown">
                         <div className="py-1">
                           <button 
                             onClick={(e) => {
@@ -306,7 +337,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                               setSelectedFileDetails(null);
                               setFileDetailModal(file.id ?? null);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors duration-200"
                           >
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -325,7 +356,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                               document.body.removeChild(link);
                               setSelectedFileDetails(null);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors duration-200"
                           >
                             <FiDownload className="w-4 h-4 mr-2" />
                             Download
@@ -337,7 +368,7 @@ const Dashboard = ({ onFolderClick }: Props) => {
                               setSelectedFileDetails(null);
                               setPreviewModal(file.id ?? null);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors duration-200"
                           >
                             <FiExternalLink className="w-4 h-4 mr-2" />
                             View File
@@ -347,26 +378,13 @@ const Dashboard = ({ onFolderClick }: Props) => {
                             onClick={(e) => {
                               e.stopPropagation();
                               navigator.clipboard.writeText(`https://arweave.net/${file.txHash}`);
+                              toast.success('URL copied to clipboard');
                               setSelectedFileDetails(null);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors duration-200"
                           >
                             <FiCopy className="w-4 h-4 mr-2" />
                             Copy URL
-                          </button>
-                          
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank');
-                              setSelectedFileDetails(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                          >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            View Transaction
                           </button>
                         </div>
                       </div>
@@ -375,23 +393,29 @@ const Dashboard = ({ onFolderClick }: Props) => {
                 ))}
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-8 text-center">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white dark:bg-gray-800 rounded-xl p-12 text-center border border-gray-100 dark:border-gray-700"
+              >
                 <div className="flex flex-col items-center justify-center">
-                  <FiFolder size={48} className="text-gray-400 dark:text-gray-600 mb-4" />
+                  <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-6">
+                    <FiFolder size={40} className="text-gray-400 dark:text-gray-600" />
+                  </div>
                   <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300">No files uploaded yet</h3>
-                  <p className="text-gray-500 dark:text-gray-400 mt-2 mb-6">
+                  <p className="text-gray-500 dark:text-gray-400 mt-2 mb-8">
                     Upload some files to see them here
                   </p>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => navigate('/upload')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Upload Your First File
                   </motion.button>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
