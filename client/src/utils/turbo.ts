@@ -49,10 +49,12 @@ export const uploadArweave = async () => {
         contentType: contentType || mime.lookup(fileName) || 'application/octet-stream',
         dataItemOpts: {
           tags: [
+            { name: 'Wallet-Address', value: walletAddress },
+            { name: 'Version', value: '2.0.1' },
             { name: 'Content-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' },
             { name: 'File-Extension', value: fileExtension },
-            { name: 'File-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' },
-            { name: 'Wallet-Address', value: walletAddress }
+            { name: 'File-Type', value: contentType || mime.lookup(fileName) || 'application/octet-stream' }
+            
           ]
         }
       } as any);

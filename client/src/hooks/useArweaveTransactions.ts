@@ -22,13 +22,19 @@ export const useArweaveTransactions = () => {
     setError(null);
 
     try {
+      console.log('Fetching transactions for address:', userAddress);
+      
       const query = {
         query: `
           query {
             transactions(
-              owners: ["${userAddress}"], 
+               
               first: 100,
-              ${cursor ? `after: "${cursor}"` : ''}
+              ${cursor ? `after: "${cursor}"` : ''},
+              tags: [
+                { name: "Wallet-Address", values: ["${userAddress}"] },
+                { name: "Version", values: ["2.0.1"] }
+              ]
             ) {
               edges {
                 cursor
@@ -48,14 +54,26 @@ export const useArweaveTransactions = () => {
         `
       };
       
+      console.log('Query:', JSON.stringify(query, null, 2));
+      
       const response = await fetch('https://arweave.net/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(query),
       });
       
-      const { data } = await response.json();
+      const result = await response.json();
+      console.log('Response:', JSON.stringify(result, null, 2));
+      
+      if (result.errors) {
+        console.error('GraphQL Errors:', result.errors);
+        throw new Error(result.errors[0].message);
+      }
+      
+      const { data } = result;
       const newTransactions = data.transactions.edges.map((edge: any) => edge.node);
+      
+      console.log('New transactions:', newTransactions);
       
       if (loadMore) {
         setTransactions(prev => [...prev, ...newTransactions]);
@@ -67,14 +85,15 @@ export const useArweaveTransactions = () => {
       setCursor(lastEdge?.cursor || null);
       setHasMore(data.transactions.pageInfo.hasNextPage);
     } catch (err) {
-      setError('Failed to fetch transactions');
       console.error('Error fetching transactions:', err);
+      setError('Failed to fetch transactions');
     } finally {
       setLoading(false);
     }
   }, [userAddress, cursor]);
 
   useEffect(() => {
+    console.log('useEffect triggered with userAddress:', userAddress);
     fetchTransactions();
   }, [userAddress]);
 

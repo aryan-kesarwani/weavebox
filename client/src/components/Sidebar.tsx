@@ -73,7 +73,7 @@ const Sidebar = ({ isSidebarOpen, currentPage }: SidebarProps) => {
           }`}
         >
           <FiFolder size={20} />
-          <span>View Uploads</span>
+          <span>Recent Uploads</span>
         </motion.button>
 
         <motion.button
