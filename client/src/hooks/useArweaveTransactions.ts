@@ -56,7 +56,7 @@ export const useArweaveTransactions = () => {
       
       console.log('Query:', JSON.stringify(query, null, 2));
       
-      const response = await fetch('https://arweave.net/graphql', {
+      const response = await fetch('https://g8way.io/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(query),
