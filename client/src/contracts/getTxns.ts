@@ -3,7 +3,7 @@ import { RootState } from "../redux/store";
 
 const userAddress = useSelector((state: RootState) => state.arConnectionState.userAddress);
 
-export const getTxns = async () => {
+export const getTxns = async (userAddress: string) => {
 const query = {
     query: `
       query {
@@ -32,4 +32,4 @@ const query = {
   return transactions;
 }
 
-export default getTxns;
+export default getTxns;
