@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FiUpload, FiFolder } from 'react-icons/fi';
+import { FiUpload, FiFolder, FiGlobe } from 'react-icons/fi';
 import { isGoogleConnected } from '../utils/googleAuth';
 
 type SidebarProps = {
   isSidebarOpen: boolean;
-  currentPage: 'dashboard' | 'upload' | 'uploads' | 'google-drive';
+  currentPage: 'dashboard' | 'upload' | 'uploads' | 'google-drive' | 'arweavefiles';
 };
 
 const Sidebar = ({ isSidebarOpen, currentPage }: SidebarProps) => {
@@ -73,8 +73,24 @@ const Sidebar = ({ isSidebarOpen, currentPage }: SidebarProps) => {
           }`}
         >
           <FiFolder size={20} />
-          <span>View Uploads</span>
+          <span>Recent Uploads</span>
         </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate('/arweavefiles')}
+          className={`w-full flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 ${
+            currentPage === 'arweavefiles' ? 'bg-gray-100 dark:bg-gray-700' : ''
+          }`}
+        >
+          <FiGlobe size={20} />
+          <span>All Files</span>
+        </motion.button>
+
+
+
+
         
         <motion.button
           whileHover={{ scale: 1.05 }}
