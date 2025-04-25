@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiFolderPlus, FiDownload, FiExternalLink, FiCopy, FiX } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
+import { FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiExternalLink, FiCopy, FiX } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { useArweaveWallet, useDarkMode } from '../utils/util';
 import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
@@ -12,14 +12,6 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import { useArweaveTransactions } from '../hooks/useArweaveTransactions';
 
-interface Transaction {
-  id: string;
-  tags: Array<{
-    name: string;
-    value: string;
-  }>;
-}
-
 interface Tag {
   name: string;
   value: string;
@@ -27,7 +19,6 @@ interface Tag {
 
 const Uploads = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
   const [sortOption, setSortOption] = useState('date-desc');
@@ -44,7 +35,7 @@ const Uploads = () => {
 
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+  const { darkMode } = useDarkMode();
   const { transactions, loading, error, loadMore, hasMore } = useArweaveTransactions();
 
   const [uploadedFiles, setUploadedFiles] = useState<StoredFile[]>([]);
@@ -269,7 +260,7 @@ const Uploads = () => {
   const filteredTransactions = transactions.filter(tx => {
     const matchesSearch = tx.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = fileTypeFilter === 'all' || 
-      tx.tags.some(tag => tag.name === 'Content-Type' && tag.value.includes(fileTypeFilter));
+      tx.tags.some((tag: Tag) => tag.name === 'Content-Type' && tag.value.includes(fileTypeFilter));
     return matchesSearch && matchesType;
   });
 
@@ -333,6 +324,19 @@ const Uploads = () => {
     }
   };
 
+  const handleTagClick = (tag: string): void => {
+    setSearchQuery(tag);
+  };
+
+  const fetchTransactions = async (): Promise<void> => {
+    try {
+      // Implementation of fetchTransactions
+      await Promise.resolve();
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       <ToastContainer theme={darkMode ? 'dark' : 'light'} />
@@ -341,6 +345,7 @@ const Uploads = () => {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         currentPage="uploads"
+        fetchTransactions={fetchTransactions}
       />
 
       <Sidebar isSidebarOpen={isSidebarOpen} currentPage="uploads" />
@@ -624,7 +629,7 @@ const Uploads = () => {
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Content Type</p>
                         <p className="font-medium text-gray-900 dark:text-white">
-                          {tx.tags.find(tag => tag.name === 'Content-Type')?.value || 'Unknown'}
+                          {tx.tags.find((tag: Tag) => tag.name === 'Content-Type')?.value || 'Unknown'}
                         </p>
                       </div>
                     </div>

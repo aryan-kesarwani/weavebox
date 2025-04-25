@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUpload, FiImage, FiVideo, FiFolder, FiFolderPlus, FiArrowRight, FiFile, FiMusic, FiDownload, FiExternalLink, FiCopy, FiX } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
-import API from '../globals/axiosConfig';
+import { useNavigate } from 'react-router-dom';
 import { useArweaveWallet, useDarkMode } from '../utils/util';
-import accessDriveFiles from '../googleAuths/accessDriveFiles';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import { getStoredFiles, StoredFile } from '../utils/fileStorage';
-import Sidebar from '../components/Sidebar'; // Import the Sidebar component
-import Navbar from '../components/Navbar'; // Import the Navbar component
+import Sidebar from '../components/Sidebar';
+import Navbar from '../components/Navbar';
+import API from '../globals/axiosConfig';
+import accessDriveFiles from '../googleAuths/accessDriveFiles';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Declare the google namespace for TypeScript
 declare global {
@@ -36,11 +36,7 @@ interface GoogleDriveFile {
   mimeType: string;
 }
 
-type Props = {
-  onFolderClick?: (folderId: string) => void; // Optional: For in-app folder navigation
-};
-
-const Dashboard = ({ onFolderClick }: Props) => {
+const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedFileDetails, setSelectedFileDetails] = useState<number | null>(null);
   const [fileDetailModal, setFileDetailModal] = useState<number | null>(null);
@@ -49,8 +45,8 @@ const Dashboard = ({ onFolderClick }: Props) => {
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   const navigate = useNavigate();
-  const { userAddress, handleDisconnect } = useArweaveWallet();
-  const { darkMode, toggleDarkMode } = useDarkMode();
+  const { handleDisconnect } = useArweaveWallet();
+  const { darkMode } = useDarkMode();
 
   const [recentFiles, setRecentFiles] = useState<StoredFile[]>([]);
 

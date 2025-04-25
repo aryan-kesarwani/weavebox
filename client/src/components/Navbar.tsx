@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Dispatch, SetStateAction } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMenu, FiX, FiUser, FiChevronLeft } from 'react-icons/fi';
 import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
@@ -6,9 +6,9 @@ import { toast } from 'react-toastify';
 
 interface NavbarProps {
   isSidebarOpen: boolean;
-  setIsSidebarOpen: (isOpen: boolean) => void;
+  setIsSidebarOpen: Dispatch<SetStateAction<boolean>>;
   currentPage: string;
-  fetchTransactions: () => Promise<void>;
+  fetchTransactions?: () => Promise<void>;
 }
 
 const Navbar = ({ isSidebarOpen, setIsSidebarOpen, currentPage, fetchTransactions }: NavbarProps) => {
@@ -164,7 +164,7 @@ const Navbar = ({ isSidebarOpen, setIsSidebarOpen, currentPage, fetchTransaction
                       <button
                         onClick={() => {
                           setShowProfileMenu(false);
-                          fetchTransactions();
+                          fetchTransactions && fetchTransactions();
                         }}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
