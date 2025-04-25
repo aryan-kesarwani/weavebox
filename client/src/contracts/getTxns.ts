@@ -15,10 +15,6 @@ const query = {
                 name
                 value
               }
-              data {
-                size
-                type
-              }
             }
           }
         }
