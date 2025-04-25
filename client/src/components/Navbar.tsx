@@ -8,9 +8,10 @@ interface NavbarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
   currentPage: string;
+  fetchTransactions: () => Promise<void>;
 }
 
-const Navbar = ({ isSidebarOpen, setIsSidebarOpen, currentPage }: NavbarProps) => {
+const Navbar = ({ isSidebarOpen, setIsSidebarOpen, currentPage, fetchTransactions }: NavbarProps) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
   const { userAddress, handleDisconnect } = useArweaveWallet();
@@ -159,12 +160,23 @@ const Navbar = ({ isSidebarOpen, setIsSidebarOpen, currentPage }: NavbarProps) =
                     <p className="text-sm text-gray-500 dark:text-gray-400 break-all">{userAddress || 'Not connected'}</p>
                   </div>
                   {userAddress && (
-                    <button
-                      onClick={handleDisconnectWallet}
-                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    >
-                      Disconnect Wallet
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          fetchTransactions();
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Transaction History
+                      </button>
+                      <button
+                        onClick={handleDisconnectWallet}
+                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Disconnect Wallet
+                      </button>
+                    </>
                   )}
                 </div>
               )}

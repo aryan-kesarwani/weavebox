@@ -14,6 +14,8 @@ import { db } from '../utils/db';
 import { uploadArweave } from '../utils/turbo';
 import UploadConfirmationModal from '../components/UploadConfirmationModal';
 import UploadProgressBar from '../components/UploadProgressBar';
+import { getTxns } from '../contracts/getTxns';
+import TransactionSidebar from '../components/TransactionSidebar';
 
 interface GoogleDriveFile {
   id: string;
@@ -41,6 +43,9 @@ const GoogleDrive = () => {
   const [previewModal, setPreviewModal] = useState<string | null>(null);
   const [googleToken, setGoogleToken] = useState<string | null>(null);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   const [imageBlobs, setImageBlobs] = useState<Record<string, string>>({});
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, 'loading' | 'loaded' | 'error'>>({});
@@ -795,6 +800,21 @@ const GoogleDrive = () => {
     setUploadComplete(false);
   };
 
+  // Fetch Transaction
+  const fetchTransactions = async () => {
+    setIsLoadingTransactions(true);
+    try {
+      const txns = await getTxns();
+      setTransactions(txns);
+      setIsRightSidebarOpen(true);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to fetch transactions');
+    } finally {
+      setIsLoadingTransactions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
       <ToastContainer theme={darkMode ? 'dark' : 'light'} />
@@ -804,6 +824,7 @@ const GoogleDrive = () => {
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
         currentPage="google-drive"
+        fetchTransactions={fetchTransactions}
       />
 
       {/* Sidebar */}
@@ -1172,6 +1193,14 @@ const GoogleDrive = () => {
         </div>
       </div>
 
+      {/* Transaction History Sidebar */}
+      <TransactionSidebar
+        isOpen={isRightSidebarOpen}
+        onClose={() => setIsRightSidebarOpen(false)}
+        transactions={transactions}
+        isLoading={isLoadingTransactions}
+      />
+
       {/* File Preview Modal */}
       <AnimatePresence>
         {previewModal !== null && (
@@ -1428,6 +1457,7 @@ const GoogleDrive = () => {
         isComplete={uploadComplete}
         onClose={handleCloseProgress}
       />
+
     </div>
   );
 };
