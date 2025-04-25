@@ -12,15 +12,6 @@ const formatFileSize = (bytes: number): string => {
   return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
 };
 
-const generateFakeTxHash = (): string => {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
-  let result = '';
-  for (let i = 0; i < 43; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
-
 const getFileType = (mimeType: string): string => {
   if (mimeType.startsWith('image/')) return 'image';
   if (mimeType.startsWith('video/')) return 'video';
@@ -74,9 +65,6 @@ export const storeFile = async (file: File, userAddress: string): Promise<FileRe
     const sizeInBytes = file.size;
     const size = formatFileSize(sizeInBytes);
     
-    // Generate a fake transaction hash for now
-    const txHash = generateFakeTxHash();
-    
     // Create the file record
     const fileRecord: FileRecord = {
       name: file.name,
@@ -87,10 +75,10 @@ export const storeFile = async (file: File, userAddress: string): Promise<FileRe
       sizeInBytes,
       date,
       time,
-      txHash,
+      txHash: 'pending',
       permanentlyStored: true,
       uploadedBy: userAddress || 'Unknown',
-      status: 'uploaded'
+      status: 'pending'
     };
     
     // Add to the database

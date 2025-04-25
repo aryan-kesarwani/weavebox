@@ -481,7 +481,14 @@ const Uploads = () => {
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Logic for downloading - no toast
+                            if (file.txHash === 'pending') {
+                              toast.info("File is still being uploaded to Arweave. Please wait.", {
+                                position: "bottom-right",
+                                autoClose: 3000,
+                                hideProgressBar: true,
+                              });
+                              return;
+                            }
                             const link = document.createElement('a');
                             link.href = file.url || `https://arweave.net/${file.txHash}`;
                             link.download = file.name;
@@ -493,56 +500,52 @@ const Uploads = () => {
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                         >
                           <FiDownload className="w-4 h-4 mr-2" />
-                          Download
+                          {file.txHash === 'pending' ? 'Uploading...' : 'Download'}
                         </button>
                         
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedFileDetails(null);
-                            setPreviewModal(file.id ?? null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                        >
-                          <FiExternalLink className="w-4 h-4 mr-2" />
-                          View File
-                        </button>
-                        
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Copy transaction URL to clipboard
+                            if (file.txHash === 'pending') {
+                              toast.info("File is still being uploaded to Arweave. Please wait.", {
+                                position: "bottom-right",
+                                autoClose: 3000,
+                                hideProgressBar: true,
+                              });
+                              return;
+                            }
                             navigator.clipboard.writeText(`https://arweave.net/${file.txHash}`);
-                            // Show short-lived toast for clipboard copy
                             toast.info("Copied to clipboard", {
                               position: "bottom-right",
                               autoClose: 3000,
                               hideProgressBar: true,
-                              closeOnClick: true,
-                              pauseOnHover: true,
-                              draggable: true,
                             });
                             setSelectedFileDetails(null);
                           }}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                         >
                           <FiCopy className="w-4 h-4 mr-2" />
-                          Copy URL
+                          {file.txHash === 'pending' ? 'Uploading...' : 'Copy Transaction ID'}
                         </button>
                         
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Open Arweave explorer in a new tab
+                            if (file.txHash === 'pending') {
+                              toast.info("File is still being uploaded to Arweave. Please wait.", {
+                                position: "bottom-right",
+                                autoClose: 3000,
+                                hideProgressBar: true,
+                              });
+                              return;
+                            }
                             window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank');
                             setSelectedFileDetails(null);
                           }}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                         >
-                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                          </svg>
-                          View Transaction
+                          <FiExternalLink className="w-4 h-4 mr-2" />
+                          {file.txHash === 'pending' ? 'Uploading...' : 'View Transaction'}
                         </button>
                       </div>
                     </div>
@@ -649,7 +652,16 @@ const Uploads = () => {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Actions</p>
                     <div className="flex flex-wrap gap-2">
                       <button 
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (file.txHash === 'pending') {
+                            toast.info("File is still being uploaded to Arweave. Please wait.", {
+                              position: "bottom-right",
+                              autoClose: 3000,
+                              hideProgressBar: true,
+                            });
+                            return;
+                          }
                           const link = document.createElement('a');
                           link.href = file.url || `https://arweave.net/${file.txHash}`;
                           link.download = file.name;
@@ -663,26 +675,21 @@ const Uploads = () => {
                         Download
                       </button>
                       <button 
-                        onClick={() => {
-                          setFileDetailModal(null);
-                          setPreviewModal(file.id ?? null);
-                        }}
-                        className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 flex items-center"
-                      >
-                        <FiExternalLink className="w-4 h-4 mr-2" />
-                        View File
-                      </button>
-                      <button 
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (file.txHash === 'pending') {
+                            toast.info("File is still being uploaded to Arweave. Please wait.", {
+                              position: "bottom-right",
+                              autoClose: 3000,
+                              hideProgressBar: true,
+                            });
+                            return;
+                          }
                           navigator.clipboard.writeText(`https://arweave.net/${file.txHash}`);
-                          // Show short-lived toast for clipboard copy
                           toast.info("Copied to clipboard", {
                             position: "bottom-right",
                             autoClose: 3000,
                             hideProgressBar: true,
-                            closeOnClick: true,
-                            pauseOnHover: true,
-                            draggable: true,
                           });
                         }}
                         className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
@@ -691,12 +698,21 @@ const Uploads = () => {
                         Copy URL
                       </button>
                       <button 
-                        onClick={() => window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (file.txHash === 'pending') {
+                            toast.info("File is still being uploaded to Arweave. Please wait.", {
+                              position: "bottom-right",
+                              autoClose: 3000,
+                              hideProgressBar: true,
+                            });
+                            return;
+                          }
+                          window.open(`https://viewblock.io/arweave/tx/${file.txHash}`, '_blank');
+                        }}
                         className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center"
                       >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
+                        <FiExternalLink className="w-4 h-4 mr-2" />
                         View Transaction
                       </button>
                     </div>
