@@ -479,16 +479,6 @@ const WeaveBoxLanding: React.FC = () => {
                   </svg>
                 </button>
               </div>
-              <div className="hero-users">
-                <div className="user-avatars">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="user-avatar" />
-                  ))}
-                </div>
-                <p className="users-text">
-                  <span className="users-count">1,000+</span> users already trust WeaveBox
-                </p>
-              </div>
             </div>
 
             <div className="hero-image animate-on-scroll">
