@@ -670,10 +670,43 @@ const GoogleDrive = () => {
         // Start progress
         setUploadProgress(10);
         
-        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        // First get the file metadata to check if it's a Google Workspace file
+        const metadataResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${googleToken}`
+            'Authorization': `Bearer ${googleToken}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!metadataResponse.ok) {
+          throw new Error(`Failed to get file metadata: ${metadataResponse.status}`);
+        }
+
+        const metadata = await metadataResponse.json();
+        
+        // If it's a Google Workspace file, use export endpoint
+        let downloadUrl;
+        if (metadata.mimeType.includes('google-apps')) {
+          // Map Google Workspace mime types to export formats
+          const exportMimeTypes: Record<string, string> = {
+            'application/vnd.google-apps.document': 'application/pdf',
+            'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.google-apps.presentation': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+          };
+          
+          const exportMimeType = exportMimeTypes[metadata.mimeType] || 'application/pdf';
+          downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}/export?mimeType=${exportMimeType}`;
+        } else {
+          downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+        }
+
+        // Download the file
+        const response = await fetch(downloadUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${googleToken}`,
+            'Accept': '*/*'
           }
         });
         
@@ -689,7 +722,7 @@ const GoogleDrive = () => {
         
         // Create a File object from the blob
         const fileObject = new File([blob], file.name, { 
-          type: file.mimeType,
+          type: metadata.mimeType,
           lastModified: file.modifiedTime ? new Date(file.modifiedTime).getTime() : Date.now() 
         });
         
