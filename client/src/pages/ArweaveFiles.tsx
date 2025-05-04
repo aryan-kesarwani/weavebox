@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiExternalLink, FiCopy, FiX } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
-import { useArweaveWallet, useDarkMode } from '../utils/util';
-import { useDropzone } from 'react-dropzone';
+// import { useNavigate } from 'react-router-dom';
+import { useDarkMode } from '../utils/util';
+// import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import API from '../globals/axiosConfig';
-import { getStoredFiles, storeFile, StoredFile } from '../utils/fileStorage';
+// import API from '../globals/axiosConfig';
+import { getStoredFiles, StoredFile } from '../utils/fileStorage';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import { useArweaveTransactions } from '../hooks/useArweaveTransactions';
@@ -24,17 +24,15 @@ const Uploads = () => {
   const [sortOption, setSortOption] = useState('date-desc');
   const [showFileTypeDropdown, setShowFileTypeDropdown] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [showUploadPopup, setShowUploadPopup] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [priceEstimate, setPriceEstimate] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
+  // const [showUploadPopup, setShowUploadPopup] = useState(false);
+  // const [uploadProgress, setUploadProgress] = useState(0);
+  // const [isUploading, setIsUploading] = useState(false);
   const [selectedFileDetails, setSelectedFileDetails] = useState<string | null>(null);
   const [fileDetailModal, setFileDetailModal] = useState<string | null>(null);
   const [previewModal, setPreviewModal] = useState<string | null>(null);
 
-  const navigate = useNavigate();
-  const { userAddress, handleDisconnect } = useArweaveWallet();
+  // const navigate = useNavigate();
+  // const { userAddress, handleDisconnect } = useArweaveWallet();
   const { darkMode } = useDarkMode();
   const { transactions, loading, error, loadMore, hasMore } = useArweaveTransactions();
 
@@ -54,39 +52,39 @@ const Uploads = () => {
     }
   }, [error]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.upload-popup-container') && !target.closest('.upload-button')) {
-        setShowUploadPopup(false);
-        clearFileSelection();
-      }
-      setShowFileTypeDropdown(false);
-      setShowSortDropdown(false);
-    };
+  // useEffect(() => {
+  //   const handleClickOutside = (e: MouseEvent) => {
+  //     const target = e.target as HTMLElement;
+  //     if (!target.closest('.upload-popup-container') && !target.closest('.upload-button')) {
+  //       setShowUploadPopup(false);
+  //       clearFileSelection();
+  //     }
+  //     setShowFileTypeDropdown(false);
+  //     setShowSortDropdown(false);
+  //   };
     
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
+  //   document.addEventListener('click', handleClickOutside);
+  //   return () => {
+  //     document.removeEventListener('click', handleClickOutside);
+  //   };
+  // }, []);
 
-  useEffect(() => {
-    if (showUploadPopup) {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
+  // useEffect(() => {
+  //   if (showUploadPopup) {
+  //     const script = document.createElement('script');
+  //     script.src = 'https://accounts.google.com/gsi/client';
+  //     script.async = true;
+  //     script.defer = true;
+  //     document.body.appendChild(script);
 
-      return () => {
-        const scriptElement = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
-        if (scriptElement && scriptElement.parentNode) {
-          scriptElement.parentNode.removeChild(scriptElement);
-        }
-      };
-    }
-  }, [showUploadPopup]);
+  //     return () => {
+  //       const scriptElement = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+  //       if (scriptElement && scriptElement.parentNode) {
+  //         scriptElement.parentNode.removeChild(scriptElement);
+  //       }
+  //     };
+  //   }
+  // }, [showUploadPopup]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -132,121 +130,116 @@ const Uploads = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMore]);
 
-  const handleDisconnectWallet = () => {
-    handleDisconnect();
-    navigate('/');
-  };
+  // const handleDisconnectWallet = () => {
+  //   handleDisconnect();
+  //   navigate('/');
+  // };
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      setSelectedFile(acceptedFiles[0]);
-      const fileSize = acceptedFiles[0].size;
-      const price = fileSize < 100 * 1024 ? 0 : (fileSize / 1000000) * 0.1;
-      setPriceEstimate(`$${price.toFixed(4)}`);
-    }
-  }, []);
+  // const onDrop = useCallback((acceptedFiles: File[]) => {
+  //   if (acceptedFiles.length > 0) {
+  //     const fileSize = acceptedFiles[0].size;
+  //   }
+  // }, []);
 
-  useDropzone({
-    onDrop,
-    maxFiles: 1,
-    accept: {
-      'application/*': ['.pdf', '.doc', '.docx'],
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
-      'video/*': ['.mp4', '.mov', '.avi'],
-      'audio/*': ['.mp3', '.wav'],
-    }
-  });
+  // useDropzone({
+  //   onDrop,
+  //   maxFiles: 1,
+  //   accept: {
+  //     'application/*': ['.pdf', '.doc', '.docx'],
+  //     'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
+  //     'video/*': ['.mp4', '.mov', '.avi'],
+  //     'audio/*': ['.mp3', '.wav'],
+  //   }
+  // });
 
-  const clearFileSelection = () => {
-    setSelectedFile(null);
-    setPriceEstimate(null);
-    setUploadProgress(0);
-  };
+  // const clearFileSelection = () => {
+  //   setUploadProgress(0);
+  // };
 
-  const handleCloseUploadPopup = () => {
-    setShowUploadPopup(false);
-    clearFileSelection();
-  };
+  // const handleCloseUploadPopup = () => {
+  //   setShowUploadPopup(false);
+  //   clearFileSelection();
+  // };
 
-  const handleDeviceUpload = async () => {
-    if (!selectedFile) return;
+  // const handleDeviceUpload = async () => {
+  //   if (!selectedFile) return;
     
-    setIsUploading(true);
-    setUploadProgress(0);
+  //   setIsUploading(true);
+  //   setUploadProgress(0);
     
-    try {
-      const simulateProgress = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(simulateProgress);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
+  //   try {
+  //     const simulateProgress = setInterval(() => {
+  //       setUploadProgress(prev => {
+  //         if (prev >= 90) {
+  //           clearInterval(simulateProgress);
+  //           return 90;
+  //         }
+  //         return prev + 10;
+  //       });
+  //     }, 300);
       
-      const newFile = await storeFile(selectedFile, userAddress || '');
+  //     const newFile = await storeFile(selectedFile, userAddress || '');
       
-      clearInterval(simulateProgress);
-      setUploadProgress(100);
+  //     clearInterval(simulateProgress);
+  //     setUploadProgress(100);
       
-      setUploadedFiles(prevFiles => [newFile, ...prevFiles]);
+  //     setUploadedFiles(prevFiles => [newFile, ...prevFiles]);
       
-      setIsUploading(false);
-      toast.success('File uploaded successfully!', {
-        position: "bottom-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+  //     setIsUploading(false);
+  //     toast.success('File uploaded successfully!', {
+  //       position: "bottom-right",
+  //       autoClose: 3000,
+  //       hideProgressBar: false,
+  //       closeOnClick: true,
+  //       pauseOnHover: true,
+  //       draggable: true,
+  //     });
       
-      clearFileSelection();
-      setShowUploadPopup(false);
+  //     clearFileSelection();
+  //     setShowUploadPopup(false);
       
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error('Failed to upload file. Please try again.', {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
-      setIsUploading(false);
-    }
-  };
+  //   } catch (error) {
+  //     console.error('Error uploading file:', error);
+  //     toast.error('Failed to upload file. Please try again.', {
+  //       position: "bottom-right",
+  //       autoClose: 3000,
+  //     });
+  //     setIsUploading(false);
+  //   }
+  // };
 
-  const handleGoogleLogin = () => {
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive',
-      callback: async (response: { access_token: string }) => {
-        console.log('Token', response.access_token);
-        if (response.access_token) {
-          try {
-            const result = await API.post('/auth/verify', {
-              access_token: response.access_token
-            });
-            console.log('Login successful:', result);
-            localStorage.setItem('googleAccessToken', response.access_token);
-            toast.success('Connected to Google Drive successfully!', {
-              position: "bottom-right",
-              autoClose: 3000,
-            });
-            clearFileSelection();
-            setShowUploadPopup(false);
-          } catch (error) {
-            console.error('Error during login:', error);
-            toast.error('Failed to connect to Google Drive', {
-              position: "bottom-right",
-              autoClose: 3000,
-            });
-          }
-        }
-      },
-    });
+  // const handleGoogleLogin = () => {
+  //   const client = window.google.accounts.oauth2.initTokenClient({
+  //     client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+  //     scope: 'https://www.googleapis.com/auth/drive',
+  //     callback: async (response: { access_token: string }) => {
+  //       console.log('Token', response.access_token);
+  //       if (response.access_token) {
+  //         try {
+  //           const result = await API.post('/auth/verify', {
+  //             access_token: response.access_token
+  //           });
+  //           console.log('Login successful:', result);
+  //           localStorage.setItem('googleAccessToken', response.access_token);
+  //           toast.success('Connected to Google Drive successfully!', {
+  //             position: "bottom-right",
+  //             autoClose: 3000,
+  //           });
+  //           clearFileSelection();
+  //           setShowUploadPopup(false);
+  //         } catch (error) {
+  //           console.error('Error during login:', error);
+  //           toast.error('Failed to connect to Google Drive', {
+  //             position: "bottom-right",
+  //             autoClose: 3000,
+  //           });
+  //         }
+  //       }
+  //     },
+  //   });
 
-    client.requestAccessToken();
-  };
+  //   client.requestAccessToken();
+  // };
 
   const getFileType = (tags: Tag[]) => {
     const contentType = tags.find(tag => tag.name === 'Content-Type')?.value || '';
@@ -324,9 +317,9 @@ const Uploads = () => {
     }
   };
 
-  const handleTagClick = (tag: string): void => {
-    setSearchQuery(tag);
-  };
+  // const handleTagClick = (tag: string): void => {
+  //   setSearchQuery(tag);
+  // };
 
   const fetchTransactions = async (): Promise<void> => {
     try {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUpload, FiUser, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiFilter, FiChevronDown, FiExternalLink, FiDownload, FiX } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
+import { FiUpload, FiFolder, FiFile, FiImage, FiVideo, FiMusic, FiExternalLink, FiDownload, FiX } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
 import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import { ToastContainer, toast } from 'react-toastify';
@@ -42,7 +42,7 @@ declare global {
 
 const GoogleDrive = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true); 
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  // const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState('all');
   const [sortOption, setSortOption] = useState('name-asc');
@@ -284,10 +284,10 @@ const GoogleDrive = () => {
     loadFiles(folderId);
   };
 
-  const handleDisconnectWallet = () => {
-    handleDisconnect();
-    navigate('/');
-  };
+  // const handleDisconnectWallet = () => {
+  //   handleDisconnect();
+  //   navigate('/');
+  // };
 
   const handleDisconnectGoogle = () => {
     // Clear all Google-related data from localStorage

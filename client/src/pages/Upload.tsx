@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiUpload } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
+import { useArweaveWallet, useDarkMode} from '../utils/util';
 import { useDropzone } from 'react-dropzone';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

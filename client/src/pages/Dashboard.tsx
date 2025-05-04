@@ -7,8 +7,8 @@ import { toast } from 'react-toastify';
 import { getStoredFiles, StoredFile } from '../utils/fileStorage';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import API from '../globals/axiosConfig';
-import accessDriveFiles from '../googleAuths/accessDriveFiles';
+// import API from '../globals/axiosConfig';
+// import accessDriveFiles from '../googleAuths/accessDriveFiles';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Declare the google namespace for TypeScript
@@ -30,25 +30,32 @@ declare global {
   }
 }
 
-interface GoogleDriveFile {
-  id: string;
-  name: string;
-  mimeType: string;
-}
+// interface GoogleDriveFile {
+//   id: string;
+//   name: string;
+//   mimeType: string;
+// }
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedFileDetails, setSelectedFileDetails] = useState<number | null>(null);
   const [fileDetailModal, setFileDetailModal] = useState<number | null>(null);
   const [previewModal, setPreviewModal] = useState<number | null>(null);
-  const [files, setFiles] = useState<GoogleDriveFile[]>([]);
+  // const [files, setFiles] = useState<GoogleDriveFile[]>([]);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   const navigate = useNavigate();
-  const { handleDisconnect } = useArweaveWallet();
+  const { userAddress} = useArweaveWallet();
   const { darkMode } = useDarkMode();
 
   const [recentFiles, setRecentFiles] = useState<StoredFile[]>([]);
+
+  // Check wallet connection and redirect if disconnected
+  useEffect(() => {
+    if (!userAddress) {
+      navigate('/');
+    }
+  }, [userAddress, navigate]);
 
   useEffect(() => {
     if (darkMode) {
@@ -145,10 +152,10 @@ const Dashboard = () => {
     client.requestAccessToken();
   };
 
-  const handleDisconnectWallet = () => {
-    handleDisconnect();
-    navigate('/');
-  };
+  // const handleDisconnectWallet = () => {
+  //   handleDisconnect();
+  //   navigate('/');
+  // };
 
   const getFileIcon = (type: string) => {
     switch(type) {
@@ -184,7 +191,7 @@ const Dashboard = () => {
               Welcome to WeaveBox
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Your gateway to permanent, decentralized storage on Arweave. Upload files from your device or import from Google Drive.
+              Your gateway to permanent, decentralized storage on Arweave.
             </p>
           </div>
           
@@ -203,7 +210,7 @@ const Dashboard = () => {
                 </div>
                 <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Upload from Device</h2>
                 <p className="text-gray-600 dark:text-gray-300 mb-8">
-                  Upload files directly from your computer or mobile device to Arweave's permanent storage.
+                  Upload From Local Device.
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}

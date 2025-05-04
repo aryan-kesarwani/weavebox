@@ -1,6 +1,6 @@
 import { useState, Dispatch, SetStateAction } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMenu, FiX, FiUser, FiChevronLeft } from 'react-icons/fi';
+import { FiMenu, FiUser, FiChevronLeft } from 'react-icons/fi';
 import { useArweaveWallet, useDarkMode, useGoogleUser } from '../utils/util';
 import { toast } from 'react-toastify';
 

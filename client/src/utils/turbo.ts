@@ -1,7 +1,8 @@
+//turbo sdk file use to upload files to arweave
 import mime from 'mime-types';
 import { TurboFactory, ArconnectSigner } from '@ardrive/turbo-sdk/web';
 import { db, FileRecord } from './db';
-import { Readable } from 'stream';
+// import { Readable } from 'stream';
 
 export const uploadArweave = async () => {
   // Fetch all files from the database

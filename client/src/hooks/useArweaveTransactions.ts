@@ -1,3 +1,4 @@
+//use to fetch all transactions from arweave
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../redux/store';
